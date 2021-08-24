@@ -1,0 +1,473 @@
+openapi: 3.0.1
+info:
+  title: Event Repository REST API
+  description: Event Repository REST API for retrieving the event information
+  contact: {}
+  version: 0.0.1
+tags:
+- name: event-resource
+  description: The Event Resource API for getting single event information
+- name: search-resource
+  description: The search api provides methods for querying up/down stream given an
+    event id.
+- name: events-resource
+  description: The Events Resource API for getting all events information
+paths:
+  /events:
+    get:
+      tags:
+      - events-resource
+      summary: To get all events information
+      operationId: getEventsUsingGET
+      parameters:
+      - name: pageNo
+        in: query
+        description: "Page to display if results span across multiple pages."
+        schema:
+          type: integer
+          format: int32
+          default: 1
+      - name: pageSize
+        in: query
+        description: "The number of events to be displayed per page."
+        schema:
+          type: integer
+          format: int32
+          default: 500
+      - name: pageStartItem
+        in: query
+        description: "Intended to skip few items at the start of result, Should\
+          \ be used only if `pageNo=1` ie. first page of results."
+        schema:
+          type: integer
+          format: int32
+          default: 1
+      - name: shallow
+        in: query
+        description: "Determines if external ER's should be used to compile\
+          \ the results of query. Use `false` to use External ER's."
+        schema:
+          type: boolean
+          default: false
+      - name: lazy
+        in: query
+        description: "If lazy is `true`, it implies that when the events limit\
+          \ is reached according to pazesize no additional request is performed and the search will stop."
+        schema:
+          type: boolean
+          default: false
+      - name: readable
+        in: query
+        description: |
+          Determines if event time should be in milliseconds, or in Human readable time format. Ex:
+
+          `false` 1499076742982
+
+          `true`  2018-10-31T13:36:00.824Z.
+        schema:
+          type: boolean
+          default: false
+      - name: params
+        in: query
+        description: |
+          To search for specific events or artifacts, filtering with parameters is supported.
+
+          **Syntax:**
+
+          `<resource>?key[.key ...]<FC>value[&key[.key ...]<FC>value ...]`
+
+          <FC> is one of the Filter comparators described below. To traverse into nested structures and filter on their keys, namespacing with
+          `.` (dot) is used.
+
+          ```
+          =  - equal to
+          >  - greater than
+          <  - less than
+          >= - greater than or equal to
+          <= - less than or equal to
+          != - not equal to
+          ```
+
+          **Examples, single key:**
+
+          `/events/?meta.type=EiffelActivityStartedEvent`
+
+          **Examples multiple keys:**
+
+          ```
+          /events/?key1=value1&key2=value2
+          /events/?key1>=value1&key2!=value2&key3<value3    #Multiple comparators
+          /events/?key1>value1&key1<=value2&key1!=value3    #Multiple constraints on one key
+          ```
+
+          **Examples nested structures:**
+          ```
+          /events/?data.identity=pkg:maven/my.namespace/my-name@1.0.0
+          /events/?meta.source.domainId=my.domain&data.identity=pkg:maven/my.namespace/my-name@1.0.0    #Multiple keys and nested structures
+          ```
+
+          Note that mutiple keys only is allowed with logical AND (via `&`). There are no support for logical OR.
+
+          Filters also allow for regex to be used. This means you can make more complex matchings or use partial matching. In regex `.*` matches anything and basically works like wildcards.
+
+          **Examples of regex:**
+          ```
+          /events/?data.identity=my-artifact@1.0.0              #Partial match using artifact name and version
+          /events/?data.identity=my.namespace                   #Partial match using artifact namespace
+          /events/?data.identity=my.namespace/.*@1.0.0          #Matches any version 1.0.0 artifact within the namespace 'my.namespace'
+          /events/?data.identity=my.namespace/my-name@.*        #Matches any version of the artifact 'my-artifact' within the namepsace 'my-namespace'
+          /events/?data.identity=my.namespace/.*                #Matches any artifact within the namespace 'my.namespace'
+          ```
+          **Data types:**
+
+          By default, all data types are treated as strings. It is possible to specify the data type by including it explicitly in the query:
+
+          ```
+          /events/?int(key1)>=value1&key2!=value2&double(key3)<value3
+          ```
+
+          In this example, `key1` and `value1` are treated as integers, `key2` and `value2` are treated as strings and `key3` and `values3` are treated as doubles.
+
+          Currently only string (default), integer and double data types are supported.
+
+          **No comparator:**
+
+          Note that for events query, there is one special supported case is that the query expression has no comparator and value at all, for example `/events/?key`, which means getting all events who has `key` as a field in the JSON documents. The REST API for events query also supports `!key` as a filter which means getting all events without field ‘key’ in the JSON documents. Here are some examples:
+
+          ```
+          /events/?data.identity                                   #Get all the events containing field 'identity' in the 'data'
+          /events/?meta.source.domainId=my.domain&data.identity    #DomainId is 'my.domain' and has field 'identity' in 'data'
+          /events/?!data.customData                                #Return all the events without field 'customData' in 'data'
+          ```
+
+        schema:
+          type: object
+          additionalProperties:
+            type: string
+        style: form
+        explode: true
+        example: |
+          {
+            "meta.type":"EiffelArtifactCreatedEvent",
+            "data.identity":"pkg:maven/my.namespace/my-name@1.0.0"
+          }
+      responses:
+        200:
+          description: Successfully retrieved the events
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  pageNo:
+                    type: integer
+                    example: 1
+                  pageSize:
+                    type: integer
+                    example: 500
+                  totalNumberItems:
+                    type: integer
+                    example: 234
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      example: All found eiffel events
+        401:
+          description: Unauthorized
+          content: {}
+        403:
+          description: Forbidden
+          content: {}
+        404:
+          description: The requested events are not found
+          content: {}
+        500:
+          description: Internal server issue
+          content: {}
+  /events/{id}:
+    get:
+      tags:
+      - event-resource
+      summary: To get single event information
+      operationId: getEventUsingGET
+      parameters:
+      - name: id
+        in: path
+        description: "Id of the event."
+        required: true
+        schema:
+          type: string
+      - name: shallow
+        in: query
+        description: "Determines if external ER's should be used to compile the results of query. Use `false` to use External ER's."
+        schema:
+          type: boolean
+          default: false
+      - name: readable
+        in: query
+        description: |
+          Determines if event time should be in milliseconds, or in Human readable time format. Ex:
+
+          `false` 1499076742982
+
+          `true`  2018-10-31T13:36:00.824Z.
+        schema:
+          type: boolean
+          default: false
+      responses:
+        200:
+          description: Successfully retrieved the Event
+          content:
+            text/html:
+              schema:
+                type: string
+                example: "Webpage showing raw events but with clickable event links"
+            application/json:
+              schema:
+                type: object
+                example: The Eiffel event requested
+        400:
+          description: The eventId is not provided
+          content: {}
+        401:
+          description: Unauthorized
+          content: {}
+        403:
+          description: Forbidden
+          content: {}
+        404:
+          description: The requested event is not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errorMsg:
+                    type: string
+                    example: "The requested event is not found"
+        500:
+          description: Internal server issue
+          content: {}
+  /search/{id}:
+    get:
+      tags:
+      - search-resource
+      summary: To get an event based on eventId passed
+      operationId: searchUsingGET
+      parameters:
+      - name: id
+        in: path
+        description: "Id of the event."
+        required: true
+        schema:
+          type: string
+      - name: shallow
+        in: query
+        description: "Determines if external ER's should be used to compile the results of query. Use `false` to use External ER's."
+        schema:
+          type: boolean
+          default: false
+      - name: readable
+        in: query
+        description: |
+          Determines if event time should be in milliseconds, or in Human readable time format. Ex:
+
+          `false` 1499076742982
+
+          `true`  2018-10-31T13:36:00.824Z.
+        schema:
+          type: boolean
+          default: false
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                example: The Eiffel event requested
+        401:
+          description: Unauthorized
+          content: {}
+        403:
+          description: Forbidden
+          content: {}
+        404:
+          description: Not Found
+          content: {}
+    post:
+      tags:
+      - search-resource
+      summary: To get upstream/downstream events for an event based on the searchParameters
+        passed
+      operationId: searchUsingPOST
+      parameters:
+      - name: id
+        in: path
+        description: "Id of the event."
+        required: true
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: "Determines the maximum amount of events to be fetched."
+        schema:
+          type: integer
+          format: int32
+          default: -1
+      - name: levels
+        in: query
+        description: "Determines the maximum amount of levels to search."
+        schema:
+          type: integer
+          format: int32
+          default: -1
+      - name: tree
+        in: query
+        description: "Determines whether tree structure representation\
+          \ of events flow is  required or not."
+        schema:
+          type: boolean
+          default: false
+      - name: shallow
+        in: query
+        description: "Determines if external ER's should be used to compile\
+          \ the results of query. Use `false` to use External ER's."
+        schema:
+          type: boolean
+          default: false
+      - name: readable
+        in: query
+        description: |
+          Determines if event time should be in milliseconds, or in Human readable time format. Ex:
+
+          `false` 1499076742982
+
+          `true`  2018-10-31T13:36:00.824Z.
+        schema:
+          type: boolean
+          default: false
+      requestBody:
+        description: |
+          Option that is responsible for the choice of link types that should be followed under execution of upstream/downstream search.
+
+          Link Types:
+
+            - CAUSE
+            - CONTEXT
+            - FLOW_CONTEXT
+            - ACTIVITY_EXECUTION
+            - PREVIOUS_ACTIVITY_EXECUTION
+            - PREVIOUS_VERSION
+            - COMPOSITION
+            - ENVIRONMENT
+            - ARTIFACT
+            - SUBJECT
+            - ELEMENT
+            - BASE
+            - CHANGE
+            - TEST_SUITE_EXECUTION
+            - TEST_CASE_EXECUTION
+            - IUT
+            - TERC
+            - MODIFIED_ANNOUNCEMENT
+            - SUB_CONFIDENCE_LEVEL
+            - REUSED_ARTIFACT
+            - VERIFICATION_BASIS
+            - ALL
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchParameters'
+        required: false
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  upstreamLinkObjects:
+                    type: array
+                    items:
+                      type: object
+                      example: The searched event + all upsteam events
+                  downstreamLinkObjects:
+                    type: array
+                    items:
+                      type: object
+                      example: The searched event + all downstream events
+        201:
+          description: Created
+          content: {}
+        401:
+          description: Unauthorized
+          content: {}
+        403:
+          description: Forbidden
+          content: {}
+        404:
+          description: Not Found
+          content: {}
+      x-codegen-request-body-name: searchParameters
+components:
+  schemas:
+    SearchParameters:
+      type: object
+      properties:
+        dlt:
+          type: array
+          items:
+            type: string
+            enum:
+            - CAUSE
+            - CONTEXT
+            - FLOW_CONTEXT
+            - ACTIVITY_EXECUTION
+            - PREVIOUS_ACTIVITY_EXECUTION
+            - PREVIOUS_VERSION
+            - COMPOSITION
+            - ENVIRONMENT
+            - ARTIFACT
+            - SUBJECT
+            - ELEMENT
+            - BASE
+            - CHANGE
+            - TEST_SUITE_EXECUTION
+            - TEST_CASE_EXECUTION
+            - IUT
+            - TERC
+            - MODIFIED_ANNOUNCEMENT
+            - SUB_CONFIDENCE_LEVEL
+            - REUSED_ARTIFACT
+            - VERIFICATION_BASIS
+            - ALL
+        ult:
+          type: array
+          items:
+            type: string
+            enum:
+            - CAUSE
+            - CONTEXT
+            - FLOW_CONTEXT
+            - ACTIVITY_EXECUTION
+            - PREVIOUS_ACTIVITY_EXECUTION
+            - PREVIOUS_VERSION
+            - COMPOSITION
+            - ENVIRONMENT
+            - ARTIFACT
+            - SUBJECT
+            - ELEMENT
+            - BASE
+            - CHANGE
+            - TEST_SUITE_EXECUTION
+            - TEST_CASE_EXECUTION
+            - IUT
+            - TERC
+            - MODIFIED_ANNOUNCEMENT
+            - SUB_CONFIDENCE_LEVEL
+            - REUSED_ARTIFACT
+            - VERIFICATION_BASIS
+            - ALL
