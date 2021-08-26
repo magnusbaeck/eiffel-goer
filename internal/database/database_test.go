@@ -18,21 +18,21 @@ package database
 import "testing"
 
 func TestGet(t *testing.T) {
-	_, err := Get("mongodb://test", "test")
+	_, err := Get("mongodb://db/test")
 	if err != nil {
 		t.Error(err)
 	}
 }
 
 func TestGetUnknownScheme(t *testing.T) {
-	_, err := Get("unknown://test", "test")
+	_, err := Get("unknown://db/test")
 	if err == nil {
 		t.Error("possible to get a database with unknown:// scheme")
 	}
 }
 
 func TestGetUnparsableScheme(t *testing.T) {
-	_, err := Get("://", "test")
+	_, err := Get("://")
 	if err == nil {
 		t.Error("possible to get a database with an unparsable scheme")
 	}

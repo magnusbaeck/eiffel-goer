@@ -50,19 +50,19 @@ func Get() Server {
 	}
 }
 
-// Add an address to the server.
+// WithAddr adds an address to the server.
 func (s *WebServer) WithAddr(addr string) Server {
 	s.server.Addr = addr
 	return s
 }
 
-// Add an error logger to the server.
+// WithErrLogger adds an error logger to the server.
 func (s *WebServer) WithErrLogger(l *log.Logger) Server {
 	s.server.ErrorLog = l
 	return s
 }
 
-// Add a router to the server.
+// WithRouter adds a router to the server.
 func (s *WebServer) WithRouter(router *mux.Router) Server {
 	s.server.Handler = router
 	return s
@@ -82,18 +82,18 @@ func (s *WebServer) Start() error {
 	return nil
 }
 
-// Get error message from the webserver.
+// Error gets error message from the webserver.
 func (s *WebServer) Error() error {
 	return s.err
 }
 
-// Wait for the webserver to start running.
+// WaitRunning waits for the webserver to start running.
 // Note that this will send 'true' first, and then 'false' if the server crashes.
 func (s *WebServer) WaitRunning() bool {
 	return <-s.running
 }
 
-// Wait for the webserver to stop.
+// WaitStopped waits for the webserver to stop.
 func (s *WebServer) WaitStopped() bool {
 	return <-s.stopped
 }

@@ -18,11 +18,12 @@ package application
 import (
 	"context"
 
+	"github.com/gorilla/mux"
+
 	"github.com/eiffel-community/eiffel-goer/internal/config"
 	"github.com/eiffel-community/eiffel-goer/internal/database"
 	"github.com/eiffel-community/eiffel-goer/pkg/server"
 	v1alpha1 "github.com/eiffel-community/eiffel-goer/pkg/v1alpha1/api"
-	"github.com/gorilla/mux"
 )
 
 type Application struct {
@@ -33,14 +34,14 @@ type Application struct {
 	V1Alpha1 *v1alpha1.V1Alpha1Application
 }
 
-// Create a new Goer application.
+// Get a new Goer application.
 func Get(cfg config.Config) (*Application, error) {
 	application := &Application{
 		Config: cfg,
 		Router: mux.NewRouter(),
 		Server: server.Get(),
 	}
-	if cfg.GetDBConnectionString() != "" {
+	if cfg.DBConnectionString() != "" {
 		db, err := application.getDB()
 		if err != nil {
 			return nil, err
@@ -50,11 +51,10 @@ func Get(cfg config.Config) (*Application, error) {
 	return application, nil
 }
 
-// Get, but don't connect to, a database.
+// getDB gets, but does not connect to, a database.
 func (app *Application) getDB() (database.Database, error) {
 	db, err := database.Get(
-		app.Config.GetDBConnectionString(),
-		app.Config.GetDatabaseName(),
+		app.Config.DBConnectionString(),
 	)
 	if err != nil {
 		return nil, err
@@ -62,7 +62,7 @@ func (app *Application) getDB() (database.Database, error) {
 	return db, nil
 }
 
-// Load routes for the /v1alpha1/ endpoint.
+// LoadV1Alpha1Routes loads routes for the /v1alpha1/ endpoint.
 func (app *Application) LoadV1Alpha1Routes() {
 	app.V1Alpha1 = &v1alpha1.V1Alpha1Application{
 		Config:   app.Config,
@@ -72,15 +72,15 @@ func (app *Application) LoadV1Alpha1Routes() {
 	app.V1Alpha1.AddRoutes(subrouter)
 }
 
-// Connect to the database and start the webserver.
+// Start connects to the database and starts the webserver.
 // This is a blocking function, waiting for the webserver to shut down.
-func (app *Application) Start() error {
-	srv := app.Server.WithAddr(app.Config.GetAPIPort()).WithRouter(app.Router)
-	err := app.Database.Connect(context.Background())
+func (app *Application) Start(ctx context.Context) error {
+	srv := app.Server.WithAddr(app.Config.APIPort()).WithRouter(app.Router)
+	err := app.Database.Connect(ctx)
 	if err != nil {
 		return err
 	}
-	defer app.Stop()
+	defer app.Stop(ctx)
 	err = srv.Start()
 	if err != nil {
 		return err
@@ -90,6 +90,6 @@ func (app *Application) Start() error {
 }
 
 // Stop the application and close the database connection.
-func (app *Application) Stop() error {
-	return app.Database.Close()
+func (app *Application) Stop(ctx context.Context) error {
+	return app.Database.Close(ctx)
 }

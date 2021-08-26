@@ -16,6 +16,8 @@
 package main
 
 import (
+	"context"
+
 	"github.com/eiffel-community/eiffel-goer/internal/config"
 	"github.com/eiffel-community/eiffel-goer/internal/logger"
 	"github.com/eiffel-community/eiffel-goer/pkg/application"
@@ -23,8 +25,8 @@ import (
 
 // Start up the Goer application.
 func main() {
-	logger.Debug.Println("Starting up.")
 	cfg := config.Get()
+	ctx := context.Background()
 
 	app, err := application.Get(cfg)
 	if err != nil {
@@ -33,7 +35,8 @@ func main() {
 
 	app.LoadV1Alpha1Routes()
 
-	err = app.Start()
+	logger.Debug.Println("Starting up.")
+	err = app.Start(ctx)
 	if err != nil {
 		logger.Error.Panic(err)
 	}

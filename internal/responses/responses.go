@@ -20,7 +20,7 @@ import (
 	"net/http"
 )
 
-// Write a JSON response with a status code to the HTTP ResponseWriter.
+// RespondWithJSON writes a JSON response with a status code to the HTTP ResponseWriter.
 func RespondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 	response, _ := json.Marshal(payload)
 
@@ -29,7 +29,7 @@ func RespondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 	w.Write(response)
 }
 
-// Write a JSON response with an error message and status code to the HTTP ResponseWriter.
+// RespondWithError writes a JSON response with an error message and status code to the HTTP ResponseWriter.
 func RespondWithError(w http.ResponseWriter, code int, message string) {
 	RespondWithJSON(w, code, map[string]string{"error": message})
 }

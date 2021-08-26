@@ -23,125 +23,58 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/golang/mock/gomock"
+
 	"github.com/eiffel-community/eiffel-goer/pkg/application"
 	"github.com/eiffel-community/eiffel-goer/pkg/schema"
 	"github.com/eiffel-community/eiffel-goer/test/mock_config"
 	"github.com/eiffel-community/eiffel-goer/test/mock_database"
-	"github.com/golang/mock/gomock"
 )
 
-// Test that the endpoint /events for a single event is added properly.
-func TestAddedRoutesEventRead(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	mockCfg := mock_config.NewMockConfig(ctrl)
-	mockDB := mock_database.NewMockDatabase(ctrl)
-
+// Test that all v1alpha1 endpoints are added properly.
+func TestRoutes(t *testing.T) {
 	eventID := "3fabaa6b-5343-4d74-8af9-dc2e4c1f2827"
-
-	mockCfg.EXPECT().GetDBConnectionString().Return("")
-	mockCfg.EXPECT().GetAPIPort().Return(":8080")
-	mockDB.EXPECT().GetEventByID(eventID).Return(schema.EiffelEvent{}, nil)
-
-	app, err := application.Get(mockCfg)
-	if err != nil {
-		t.Error(err)
+	tests := []struct {
+		name       string
+		url        string
+		httpMethod string
+		statusCode int
+	}{
+		{name: "EventsRead", httpMethod: http.MethodGet, url: "/v1alpha1/events/" + eventID, statusCode: http.StatusOK},
+		{name: "EventsReadAll", httpMethod: http.MethodGet, url: "/v1alpha1/events", statusCode: http.StatusNotImplemented},
+		{name: "SearchRead", httpMethod: http.MethodGet, url: "/v1alpha1/search/" + eventID, statusCode: http.StatusNotImplemented},
+		{name: "SearchUpstreamDownstream", httpMethod: http.MethodPost, url: "/v1alpha1/search/" + eventID, statusCode: http.StatusNotImplemented},
 	}
-	app.Database = mockDB
-	app.LoadV1Alpha1Routes()
 
-	responseRecorder := httptest.NewRecorder()
-	request := httptest.NewRequest(http.MethodGet, "/v1alpha1/events/"+eventID, nil)
-	app.Router.ServeHTTP(responseRecorder, request)
-	expectedStatusCode := http.StatusOK
-	if responseRecorder.Code != expectedStatusCode {
-		t.Errorf("Want status '%d' for '/v1alpha1/events/%s', got '%d'", expectedStatusCode, eventID, responseRecorder.Code)
-	}
-}
-
-// Test that the endpoint /events for a many events is added properly.
-func TestAddedRoutesEventReadAll(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockCfg := mock_config.NewMockConfig(ctrl)
 	mockDB := mock_database.NewMockDatabase(ctrl)
 
-	mockCfg.EXPECT().GetDBConnectionString().Return("")
-	mockCfg.EXPECT().GetAPIPort().Return(":8080")
-	mockDB.EXPECT().GetEvents().Return([]schema.EiffelEvent{}, nil)
+	mockCfg.EXPECT().DBConnectionString().Return("").AnyTimes()
+	mockCfg.EXPECT().APIPort().Return(":8080").AnyTimes()
+	// Have to use 'gomock.Any()' for the context as mux adds values to the request context.
+	mockDB.EXPECT().GetEventByID(gomock.Any(), eventID).Return(schema.EiffelEvent{}, nil)
+	mockDB.EXPECT().GetEvents(gomock.Any()).Return([]schema.EiffelEvent{}, nil)
+	mockDB.EXPECT().UpstreamDownstreamSearch(gomock.Any(), "id").Return([]schema.EiffelEvent{}, nil)
 
-	app, err := application.Get(mockCfg)
-	if err != nil {
-		t.Error(err)
-	}
-	app.Database = mockDB
-	app.LoadV1Alpha1Routes()
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			app, err := application.Get(mockCfg)
+			if err != nil {
+				t.Error(err)
+			}
+			app.Database = mockDB
+			app.LoadV1Alpha1Routes()
 
-	responseRecorder := httptest.NewRecorder()
-	request := httptest.NewRequest(http.MethodGet, "/v1alpha1/events", nil)
-	app.Router.ServeHTTP(responseRecorder, request)
-	expectedStatusCode := http.StatusNotImplemented
-	if responseRecorder.Code != expectedStatusCode {
-		t.Errorf("Want status '%d' for '/v1alpha1/events', got '%d'", expectedStatusCode, responseRecorder.Code)
-	}
-}
+			responseRecorder := httptest.NewRecorder()
+			request := httptest.NewRequest(testCase.httpMethod, testCase.url, nil)
 
-// Test that the endpoint /search is added properly.
-func TestAddedRoutesSearchRead(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	mockCfg := mock_config.NewMockConfig(ctrl)
-	mockDB := mock_database.NewMockDatabase(ctrl)
+			app.Router.ServeHTTP(responseRecorder, request)
+			expectedStatusCode := testCase.statusCode
+			if responseRecorder.Code != expectedStatusCode {
+				t.Errorf("Want status '%d' for %q, got '%d'", expectedStatusCode, testCase.url, responseRecorder.Code)
+			}
 
-	eventID := "3fabaa6b-5343-4d74-8af9-dc2e4c1f2827"
-
-	// Setting DBConnection string to "" so that application.Get does not
-	// attempt to create its own database connection. After initializing
-	// the application, add the MockDB
-	mockCfg.EXPECT().GetDBConnectionString().Return("")
-	mockCfg.EXPECT().GetAPIPort().Return(":8080")
-	mockDB.EXPECT().SearchEvent("id").Return(schema.EiffelEvent{}, nil)
-
-	app, err := application.Get(mockCfg)
-	if err != nil {
-		t.Error(err)
-	}
-	app.Database = mockDB
-	app.LoadV1Alpha1Routes()
-
-	responseRecorder := httptest.NewRecorder()
-	request := httptest.NewRequest(http.MethodGet, "/v1alpha1/search/"+eventID, nil)
-	app.Router.ServeHTTP(responseRecorder, request)
-	expectedStatusCode := http.StatusNotImplemented
-	if responseRecorder.Code != expectedStatusCode {
-		t.Errorf("Want status '%d' for '/v1alpha1/search/%s', got '%d'", expectedStatusCode, eventID, responseRecorder.Code)
-	}
-}
-
-// Test that the post endpoint /search is added properly.
-func TestAddedRoutesSearchUpstreamDownstream(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	mockCfg := mock_config.NewMockConfig(ctrl)
-	mockDB := mock_database.NewMockDatabase(ctrl)
-
-	eventID := "3fabaa6b-5343-4d74-8af9-dc2e4c1f2827"
-
-	// Setting DBConnection string to "" so that application.Get does not
-	// attempt to create its own database connection. After initializing
-	// the application, add the MockDB
-	mockCfg.EXPECT().GetDBConnectionString().Return("")
-	mockCfg.EXPECT().GetAPIPort().Return(":8080")
-	mockDB.EXPECT().UpstreamDownstreamSearch("id").Return([]schema.EiffelEvent{}, nil)
-
-	app, err := application.Get(mockCfg)
-	if err != nil {
-		t.Error(err)
-	}
-	app.Database = mockDB
-	app.LoadV1Alpha1Routes()
-
-	responseRecorder := httptest.NewRecorder()
-	request := httptest.NewRequest(http.MethodPost, "/v1alpha1/search/"+eventID, nil)
-	app.Router.ServeHTTP(responseRecorder, request)
-	expectedStatusCode := http.StatusNotImplemented
-	if responseRecorder.Code != expectedStatusCode {
-		t.Errorf("Want status '%d' for '/v1alpha1/search/%s', got '%d'", expectedStatusCode, eventID, responseRecorder.Code)
+		})
 	}
 }

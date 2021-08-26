@@ -89,7 +89,7 @@ func TestStartNoAddr(t *testing.T) {
 		t.Error(err)
 	}
 	if err.Error() != "server missing address" {
-		t.Errorf("error message does not specify it's missing address: '%s'", err.Error())
+		t.Errorf("error message does not specify it's missing address: %q", err.Error())
 	}
 	if server.WaitRunning() {
 		t.Error("server started when missing addr")
@@ -103,7 +103,7 @@ func TestStartNoHandler(t *testing.T) {
 		t.Error(err)
 	}
 	if err.Error() != "server missing handler" {
-		t.Errorf("error message does not specify it's missing handler: '%s'", err.Error())
+		t.Errorf("error message does not specify it's missing handler: %q", err.Error())
 	}
 	if server.WaitRunning() {
 		t.Error("server started when missing handler")

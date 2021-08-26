@@ -28,20 +28,20 @@ type SearchHandler struct {
 	Database database.Database
 }
 
-// Create a new handler for the search endpoint.
+// Get a new handler for the search endpoint.
 func Get(cfg config.Config, db database.Database) *SearchHandler {
 	return &SearchHandler{
 		cfg, db,
 	}
 }
 
-// Handle GET requests against the /search/{id} endpoint.
+// Read handles GET requests against the /search/{id} endpoint.
 // To get an event based on eventId passed
 func (h *SearchHandler) Read(w http.ResponseWriter, r *http.Request) {
 	responses.RespondWithError(w, http.StatusNotImplemented, http.StatusText(http.StatusNotImplemented))
 }
 
-// Handle POST requests against the /search/{id} endpoint.
+// UpstreamDownstream handles POST requests against the /search/{id} endpoint.
 // To get upstream/downstream events for an event based on the searchParameters passed
 func (h *SearchHandler) UpstreamDownstream(w http.ResponseWriter, r *http.Request) {
 	responses.RespondWithError(w, http.StatusNotImplemented, http.StatusText(http.StatusNotImplemented))

@@ -26,32 +26,23 @@ import (
 
 type Database interface {
 	Connect(context.Context) error
-	GetEvents() ([]schema.EiffelEvent, error)
-	SearchEvent(string) (schema.EiffelEvent, error)
-	UpstreamDownstreamSearch(string) ([]schema.EiffelEvent, error)
-	GetEventByID(string) (schema.EiffelEvent, error)
-	Close() error
+	GetEvents(context.Context) ([]schema.EiffelEvent, error)
+	SearchEvent(context.Context, string) (schema.EiffelEvent, error)
+	UpstreamDownstreamSearch(context.Context, string) ([]schema.EiffelEvent, error)
+	GetEventByID(context.Context, string) (schema.EiffelEvent, error)
+	Close(context.Context) error
 }
 
 // Get a new Database.
-func Get(connectionString string, databaseName string) (Database, error) {
-	db, err := get(connectionString, databaseName)
-	if err != nil {
-		return nil, err
-	}
-	var database Database = db
-	return database, nil
-}
-
-// Get a database driver based on the connectionURL scheme supplied in the configuration.
-func get(connectionString string, databaseName string) (Database, error) {
+func Get(connectionString string) (Database, error) {
 	connectionURL, err := url.Parse(connectionString)
 	if err != nil {
 		return nil, err
 	}
 	switch connectionURL.Scheme {
 	case "mongodb":
-		return mongodb.Get(connectionString, databaseName)
+		return mongodb.Get(connectionURL)
+	default:
+		return nil, fmt.Errorf("cannot find database for scheme %q", connectionURL.Scheme)
 	}
-	return nil, fmt.Errorf("cannot find database for scheme '%s'", connectionURL.Scheme)
 }

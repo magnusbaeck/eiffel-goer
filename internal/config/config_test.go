@@ -24,9 +24,7 @@ import (
 func TestGet(t *testing.T) {
 	port := "8080"
 	connectionString := "connection string"
-	databaseName := "database name"
 	os.Setenv("CONNECTION_STRING", connectionString)
-	os.Setenv("DATABASE_NAME", databaseName)
 	os.Setenv("API_PORT", port)
 
 	cfg, ok := Get().(*Cfg)
@@ -36,40 +34,27 @@ func TestGet(t *testing.T) {
 	if cfg.connectionString != connectionString {
 		t.Error("connection string not set to environment variable CONNECTION_STRING")
 	}
-	if cfg.databaseName != databaseName {
-		t.Error("database name not set to environment variable DATABASE_NAME")
-	}
 	if cfg.apiPort != port {
 		t.Error("api port not set to environment variable API_PORT")
 	}
 }
 
-// Test that GetDBConnectionString return the connectionString value from the Cfg struct
-func TestGetDBConnectionString(t *testing.T) {
+// Test that DBConnectionString return the connectionString value from the Cfg struct
+func TestDBConnectionString(t *testing.T) {
 	cfg := &Cfg{
 		connectionString: "connectionString",
 	}
-	if cfg.GetDBConnectionString() != "connectionString" {
+	if cfg.DBConnectionString() != "connectionString" {
 		t.Error("function does not return the connectionString from Cfg struct")
 	}
 }
 
-// Test that GetDatabaseName return the databaseName value from the Cfg struct
-func TestGetDatabaseName(t *testing.T) {
-	cfg := &Cfg{
-		databaseName: "databaseName",
-	}
-	if cfg.GetDatabaseName() != "databaseName" {
-		t.Error("function does not return the databaseName from Cfg struct")
-	}
-}
-
-// Test that GetAPIPort return the value from Cfg struct with a ':' at the start
-func TestGetAPIPort(t *testing.T) {
+// Test that APIPort return the value from Cfg struct with a ':' at the start
+func TestAPIPort(t *testing.T) {
 	cfg := &Cfg{
 		apiPort: "8080",
 	}
-	if cfg.GetAPIPort() != ":8080" {
+	if cfg.APIPort() != ":8080" {
 		t.Error("function does not return the apiPort from Cfg struct")
 	}
 }

@@ -21,42 +21,32 @@ import (
 )
 
 type Config interface {
-	GetDBConnectionString() string
-	GetDatabaseName() string
-	GetAPIPort() string
+	DBConnectionString() string
+	APIPort() string
 }
 
 type Cfg struct {
 	connectionString string
-	databaseName     string
-
-	apiPort string
+	apiPort          string
 }
 
-// Parse input parameters to program and return a config with them set.
+// Get parses input parameters to program and return a config with them set.
 func Get() Config {
 	conf := &Cfg{}
 
 	flag.StringVar(&conf.connectionString, "connectionstring", os.Getenv("CONNECTION_STRING"), "Database connection string.")
-	flag.StringVar(&conf.databaseName, "databasename", os.Getenv("DATABASE_NAME"), "Database name.")
-
 	flag.StringVar(&conf.apiPort, "apiport", os.Getenv("API_PORT"), "API port.")
 
 	flag.Parse()
 	return conf
 }
 
-// Get the connection string for a database.
-func (c *Cfg) GetDBConnectionString() string {
+// DBConnectionString returns the connection string for a database.
+func (c *Cfg) DBConnectionString() string {
 	return c.connectionString
 }
 
-// Get the name of the database to connect to.
-func (c *Cfg) GetDatabaseName() string {
-	return c.databaseName
-}
-
-// Get API port with a ":" prepended.
-func (c *Cfg) GetAPIPort() string {
+// APIPort returns the API port with a ":" prepended.
+func (c *Cfg) APIPort() string {
 	return ":" + c.apiPort
 }

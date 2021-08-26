@@ -16,11 +16,12 @@
 package api
 
 import (
+	"github.com/gorilla/mux"
+
 	"github.com/eiffel-community/eiffel-goer/internal/config"
 	"github.com/eiffel-community/eiffel-goer/internal/database"
 	"github.com/eiffel-community/eiffel-goer/pkg/v1alpha1/handlers/events"
 	"github.com/eiffel-community/eiffel-goer/pkg/v1alpha1/handlers/search"
-	"github.com/gorilla/mux"
 )
 
 type V1Alpha1Application struct {

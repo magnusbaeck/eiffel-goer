@@ -1,4 +1,4 @@
-export RELEASE_VERSION ?= $(shell git show -q --format=%h)
+export RELEASE_VERSION ?= $(shell git describe --always)
 export DOCKER_REGISTRY ?= registry.nordix.org/eiffel
 export DEPLOY ?= goer
 

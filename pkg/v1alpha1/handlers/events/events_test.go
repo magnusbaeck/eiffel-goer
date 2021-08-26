@@ -22,11 +22,12 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/golang/mock/gomock"
+	"github.com/gorilla/mux"
+
 	"github.com/eiffel-community/eiffel-goer/pkg/schema"
 	"github.com/eiffel-community/eiffel-goer/test/mock_config"
 	"github.com/eiffel-community/eiffel-goer/test/mock_database"
-	"github.com/golang/mock/gomock"
-	"github.com/gorilla/mux"
 )
 
 var activityJSON = []byte(`
@@ -53,96 +54,56 @@ func loadEvent() (schema.EiffelEvent, error) {
 	return event, nil
 }
 
-func TestRead(t *testing.T) {
-
-	ctrl := gomock.NewController(t)
-	mockCfg := mock_config.NewMockConfig(ctrl)
-	mockDB := mock_database.NewMockDatabase(ctrl)
-
+// Test that the events/{id} endpoint work as expected.
+func TestEvents(t *testing.T) {
 	event, err := loadEvent()
 	if err != nil {
 		t.Error(err)
 	}
 	eventID := event.Meta.ID
-	mockDB.EXPECT().GetEventByID(eventID).Return(event, nil)
-
-	app := Get(mockCfg, mockDB)
-	handler := mux.NewRouter()
-	handler.HandleFunc("/events/{id:[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}}", app.Read)
-
-	responseRecorder := httptest.NewRecorder()
-	request := httptest.NewRequest(http.MethodGet, "/events/"+eventID, nil)
-
-	handler.ServeHTTP(responseRecorder, request)
-
-	expectedStatusCode := http.StatusOK
-	if responseRecorder.Code != expectedStatusCode {
-		t.Errorf("Want status '%d' for '/events/%s', got '%d'", expectedStatusCode, eventID, responseRecorder.Code)
-	}
-	eventFromResponse := schema.EiffelEvent{}
-	err = json.Unmarshal(responseRecorder.Body.Bytes(), &eventFromResponse)
-	if err != nil {
-		t.Error(err)
-	}
-	if eventFromResponse.Meta.ID != event.Meta.ID {
-		t.Error("event returned with response is not the same as the one in DB")
-	}
-}
-
-func TestReadBadQuery(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	mockCfg := mock_config.NewMockConfig(ctrl)
-	mockDB := mock_database.NewMockDatabase(ctrl)
-
-	event, err := loadEvent()
-	if err != nil {
-		t.Error(err)
-	}
-	eventID := event.Meta.ID
-	mockDB.EXPECT().GetEventByID(eventID).Return(event, nil)
-
-	app := Get(mockCfg, mockDB)
-	handler := mux.NewRouter()
-	handler.HandleFunc("/events/{id:[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}}", app.Read)
-
-	responseRecorder := httptest.NewRecorder()
-	request := httptest.NewRequest(http.MethodGet, "/events/"+eventID, nil)
-	q := request.URL.Query()
+	badRequest := httptest.NewRequest(http.MethodGet, "/events/"+eventID, nil)
+	q := badRequest.URL.Query()
 	q.Add("nah", "hello")
-	request.URL.RawQuery = q.Encode()
+	badRequest.URL.RawQuery = q.Encode()
 
-	handler.ServeHTTP(responseRecorder, request)
-
-	expectedStatusCode := http.StatusBadRequest
-	if responseRecorder.Code != expectedStatusCode {
-		t.Errorf("Want status '%d' for '/events/%s', got '%d'", expectedStatusCode, eventID, responseRecorder.Code)
+	tests := []struct {
+		name       string
+		request    *http.Request
+		statusCode int
+		eventID    string
+		mockError  error
+	}{
+		{name: "Read", request: httptest.NewRequest(http.MethodGet, "/events/"+eventID, nil), statusCode: http.StatusOK, eventID: eventID},
+		{name: "ReadBadRequest", request: badRequest, statusCode: http.StatusBadRequest, eventID: ""},
+		{name: "ReadNotFound", request: httptest.NewRequest(http.MethodGet, "/events/"+eventID, nil), statusCode: http.StatusNotFound, eventID: "", mockError: errors.New("not found")},
 	}
-}
 
-func TestReadEventNotFound(t *testing.T) {
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			mockCfg := mock_config.NewMockConfig(ctrl)
+			mockDB := mock_database.NewMockDatabase(ctrl)
+			mockDB.EXPECT().GetEventByID(gomock.Any(), eventID).Return(event, testCase.mockError)
+			app := Get(mockCfg, mockDB)
+			handler := mux.NewRouter()
+			handler.HandleFunc("/events/{id:[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}}", app.Read)
 
-	ctrl := gomock.NewController(t)
-	mockCfg := mock_config.NewMockConfig(ctrl)
-	mockDB := mock_database.NewMockDatabase(ctrl)
+			responseRecorder := httptest.NewRecorder()
+			handler.ServeHTTP(responseRecorder, testCase.request)
 
-	event, err := loadEvent()
-	if err != nil {
-		t.Error(err)
-	}
-	eventID := event.Meta.ID
-	mockDB.EXPECT().GetEventByID(eventID).Return(schema.EiffelEvent{}, errors.New("does not exist"))
+			expectedStatusCode := testCase.statusCode
+			if responseRecorder.Code != expectedStatusCode {
+				t.Errorf("Want status '%d' for %q, got '%d'", expectedStatusCode, testCase.request.URL.String(), responseRecorder.Code)
+			}
+			eventFromResponse := schema.EiffelEvent{}
+			err = json.Unmarshal(responseRecorder.Body.Bytes(), &eventFromResponse)
+			if err != nil {
+				t.Error(err)
+			}
+			if eventFromResponse.Meta.ID != testCase.eventID {
+				t.Error("event returned with response is not the same as the one in DB")
+			}
 
-	app := Get(mockCfg, mockDB)
-	handler := mux.NewRouter()
-	handler.HandleFunc("/events/{id:[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}}", app.Read)
-
-	responseRecorder := httptest.NewRecorder()
-	request := httptest.NewRequest(http.MethodGet, "/events/"+eventID, nil)
-
-	handler.ServeHTTP(responseRecorder, request)
-
-	expectedStatusCode := http.StatusNotFound
-	if responseRecorder.Code != expectedStatusCode {
-		t.Errorf("Want status '%d' for '/events/%s', got '%d'", expectedStatusCode, eventID, responseRecorder.Code)
+		})
 	}
 }

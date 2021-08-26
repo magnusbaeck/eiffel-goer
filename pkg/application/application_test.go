@@ -16,22 +16,23 @@
 package application
 
 import (
+	"context"
 	"errors"
 	"testing"
+
+	"github.com/golang/mock/gomock"
 
 	"github.com/eiffel-community/eiffel-goer/internal/database"
 	"github.com/eiffel-community/eiffel-goer/test/mock_config"
 	"github.com/eiffel-community/eiffel-goer/test/mock_database"
 	"github.com/eiffel-community/eiffel-goer/test/mock_server"
-	"github.com/golang/mock/gomock"
 )
 
 // Test that it is possible to get an application.
 func TestGet(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockCfg := mock_config.NewMockConfig(ctrl)
-	mockCfg.EXPECT().GetDBConnectionString().Return("mongodb://testdb").Times(2)
-	mockCfg.EXPECT().GetDatabaseName().Return("testdb")
+	mockCfg.EXPECT().DBConnectionString().Return("mongodb://testdb/testdb").Times(2)
 
 	app, err := Get(mockCfg)
 	if err != nil {
@@ -55,7 +56,7 @@ func TestGet(t *testing.T) {
 func TestGetNoDB(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockCfg := mock_config.NewMockConfig(ctrl)
-	mockCfg.EXPECT().GetDBConnectionString().Return("")
+	mockCfg.EXPECT().DBConnectionString().Return("")
 
 	app, err := Get(mockCfg)
 	if err != nil {
@@ -79,8 +80,7 @@ func TestGetNoDB(t *testing.T) {
 func TestGetDBError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockCfg := mock_config.NewMockConfig(ctrl)
-	mockCfg.EXPECT().GetDBConnectionString().Return("invalid").Times(2)
-	mockCfg.EXPECT().GetDatabaseName().Return("testdb")
+	mockCfg.EXPECT().DBConnectionString().Return("invalid://testdb").Times(2)
 
 	_, err := Get(mockCfg)
 	if err == nil {
@@ -92,8 +92,7 @@ func TestGetDBError(t *testing.T) {
 func TestGetDB(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockCfg := mock_config.NewMockConfig(ctrl)
-	mockCfg.EXPECT().GetDBConnectionString().Return("mongodb://testdb").Times(2)
-	mockCfg.EXPECT().GetDatabaseName().Return("testdb")
+	mockCfg.EXPECT().DBConnectionString().Return("mongodb://testdb/testdb").Times(2)
 
 	application := &Application{
 		Config: mockCfg,
@@ -112,8 +111,7 @@ func TestGetDB(t *testing.T) {
 func TestLoadV1Alpha1Routes(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockCfg := mock_config.NewMockConfig(ctrl)
-	mockCfg.EXPECT().GetDBConnectionString().Return("mongodb://testdb").Times(2)
-	mockCfg.EXPECT().GetDatabaseName().Return("testdb")
+	mockCfg.EXPECT().DBConnectionString().Return("mongodb://testdb/testdb").Times(2)
 	app, err := Get(mockCfg)
 	if err != nil {
 		t.Error(err)
@@ -132,18 +130,18 @@ func TestStart(t *testing.T) {
 	mockCfg := mock_config.NewMockConfig(ctrl)
 	mockDB := mock_database.NewMockDatabase(ctrl)
 	mockServer := mock_server.NewMockServer(ctrl)
+	ctx := context.Background()
 
-	mockCfg.EXPECT().GetDBConnectionString().Return("mongodb://testdb").Times(2)
-	mockCfg.EXPECT().GetDatabaseName().Return("testdb")
-	mockCfg.EXPECT().GetAPIPort().Return(":8080")
+	mockCfg.EXPECT().DBConnectionString().Return("mongodb://testdb/testdb").Times(2)
+	mockCfg.EXPECT().APIPort().Return(":8080")
 
 	app, err := Get(mockCfg)
 	if err != nil {
 		t.Error(err)
 	}
 
-	mockDB.EXPECT().Connect(gomock.Any()).Return(nil)
-	mockDB.EXPECT().Close().Return(nil)
+	mockDB.EXPECT().Connect(ctx).Return(nil)
+	mockDB.EXPECT().Close(ctx).Return(nil)
 	mockServer.EXPECT().WithAddr(":8080").Return(mockServer)
 	mockServer.EXPECT().WithRouter(app.Router).Return(mockServer)
 	mockServer.EXPECT().Start().Return(nil)
@@ -153,7 +151,7 @@ func TestStart(t *testing.T) {
 	app.Database = mockDB
 	app.Server = mockServer
 
-	err = app.Start()
+	err = app.Start(ctx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -166,10 +164,10 @@ func TestStartAbort(t *testing.T) {
 	mockCfg := mock_config.NewMockConfig(ctrl)
 	mockDB := mock_database.NewMockDatabase(ctrl)
 	mockServer := mock_server.NewMockServer(ctrl)
+	ctx := context.Background()
 
-	mockCfg.EXPECT().GetDBConnectionString().Return("mongodb://testdb").Times(2)
-	mockCfg.EXPECT().GetDatabaseName().Return("testdb")
-	mockCfg.EXPECT().GetAPIPort().Return(":8080")
+	mockCfg.EXPECT().DBConnectionString().Return("mongodb://testdb/testdb").Times(2)
+	mockCfg.EXPECT().APIPort().Return(":8080")
 
 	app, err := Get(mockCfg)
 	if err != nil {
@@ -180,12 +178,12 @@ func TestStartAbort(t *testing.T) {
 	mockServer.EXPECT().WithRouter(app.Router).Return(mockServer)
 	mockServer.EXPECT().WaitStopped().Return(true)
 	mockServer.EXPECT().Error().Return(nil)
-	mockDB.EXPECT().Connect(gomock.Any()).Return(errors.New("did not work"))
+	mockDB.EXPECT().Connect(ctx).Return(errors.New("did not work"))
 
 	app.Database = mockDB
 	app.Server = mockServer
 
-	err = app.Start()
+	err = app.Start(ctx)
 	if err == nil {
 		t.Error("application did not abort start after error on database.Connect")
 	}
@@ -197,18 +195,18 @@ func TestStartFail(t *testing.T) {
 	mockCfg := mock_config.NewMockConfig(ctrl)
 	mockDB := mock_database.NewMockDatabase(ctrl)
 	mockServer := mock_server.NewMockServer(ctrl)
+	ctx := context.Background()
 
-	mockCfg.EXPECT().GetDBConnectionString().Return("mongodb://testdb").Times(2)
-	mockCfg.EXPECT().GetDatabaseName().Return("testdb")
-	mockCfg.EXPECT().GetAPIPort().Return("")
+	mockCfg.EXPECT().DBConnectionString().Return("mongodb://testdb/testdb").Times(2)
+	mockCfg.EXPECT().APIPort().Return("")
 
 	app, err := Get(mockCfg)
 	if err != nil {
 		t.Error(err)
 	}
 
-	mockDB.EXPECT().Connect(gomock.Any()).Return(nil)
-	mockDB.EXPECT().Close().Return(nil)
+	mockDB.EXPECT().Connect(ctx).Return(nil)
+	mockDB.EXPECT().Close(ctx).Return(nil)
 	mockServer.EXPECT().WithAddr("").Return(mockServer)
 	mockServer.EXPECT().WithRouter(app.Router).Return(mockServer)
 	mockServer.EXPECT().Start().Return(errors.New("error starting"))
@@ -216,7 +214,7 @@ func TestStartFail(t *testing.T) {
 	app.Database = mockDB
 	app.Server = mockServer
 
-	err = app.Start()
+	err = app.Start(ctx)
 	if err == nil {
 		t.Error("application start did not abort when server.Start failed")
 	}
@@ -227,16 +225,16 @@ func TestStop(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockCfg := mock_config.NewMockConfig(ctrl)
 	mockDB := mock_database.NewMockDatabase(ctrl)
+	ctx := context.Background()
 
-	mockCfg.EXPECT().GetDBConnectionString().Return("mongodb://testdb").Times(2)
-	mockCfg.EXPECT().GetDatabaseName().Return("testdb")
+	mockCfg.EXPECT().DBConnectionString().Return("mongodb://testdb/testdb").Times(2)
 
 	app, err := Get(mockCfg)
 	if err != nil {
 		t.Error(err)
 	}
 
-	mockDB.EXPECT().Close().Return(nil)
+	mockDB.EXPECT().Close(ctx).Return(nil)
 	app.Database = mockDB
-	app.Stop()
+	app.Stop(ctx)
 }

@@ -18,11 +18,12 @@ package events
 import (
 	"net/http"
 
+	"github.com/gorilla/mux"
+	"github.com/gorilla/schema"
+
 	"github.com/eiffel-community/eiffel-goer/internal/config"
 	"github.com/eiffel-community/eiffel-goer/internal/database"
 	"github.com/eiffel-community/eiffel-goer/internal/responses"
-	"github.com/gorilla/mux"
-	"github.com/gorilla/schema"
 )
 
 type EventHandler struct {
@@ -38,12 +39,11 @@ func Get(cfg config.Config, db database.Database) *EventHandler {
 }
 
 type EventsSingleRequest struct {
-	ID       string `schema:"id"`
-	Shallow  bool   `schema:"shallow"`  // TODO: Unused
-	Readable bool   `schema:"readable"` // TODO: NYI
+	ID      string `schema:"id"`
+	Shallow bool   `schema:"shallow"` // TODO: Unused
 }
 
-// Handle GET requests against the /events/{id} endpoint.
+// Read handles GET requests against the /events/{id} endpoint.
 // To get single event information
 func (h *EventHandler) Read(w http.ResponseWriter, r *http.Request) {
 	var request EventsSingleRequest
@@ -53,7 +53,7 @@ func (h *EventHandler) Read(w http.ResponseWriter, r *http.Request) {
 	}
 	vars := mux.Vars(r)
 	request.ID = vars["id"]
-	event, err := h.Database.GetEventByID(request.ID)
+	event, err := h.Database.GetEventByID(r.Context(), request.ID)
 	if err != nil {
 		responses.RespondWithError(w, http.StatusNotFound, err.Error())
 		return
@@ -61,7 +61,7 @@ func (h *EventHandler) Read(w http.ResponseWriter, r *http.Request) {
 	responses.RespondWithJSON(w, http.StatusOK, event)
 }
 
-// Handle GET requests against the /events/
+// ReadAll handles GET requests against the /events/ endpoint.
 // To get all events information
 func (h *EventHandler) ReadAll(w http.ResponseWriter, r *http.Request) {
 	responses.RespondWithError(w, http.StatusNotImplemented, http.StatusText(http.StatusNotImplemented))
