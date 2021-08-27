@@ -24,6 +24,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/eiffel-community/eiffel-goer/pkg/application"
 	"github.com/eiffel-community/eiffel-goer/pkg/schema"
@@ -59,7 +60,7 @@ func TestRoutes(t *testing.T) {
 
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {
-			app, err := application.Get(mockCfg)
+			app, err := application.Get(mockCfg, &log.Entry{})
 			if err != nil {
 				t.Error(err)
 			}

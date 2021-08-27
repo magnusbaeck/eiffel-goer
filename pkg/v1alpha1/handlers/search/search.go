@@ -18,6 +18,8 @@ package search
 import (
 	"net/http"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/eiffel-community/eiffel-goer/internal/config"
 	"github.com/eiffel-community/eiffel-goer/internal/database"
 	"github.com/eiffel-community/eiffel-goer/internal/responses"
@@ -26,12 +28,13 @@ import (
 type SearchHandler struct {
 	Config   config.Config
 	Database database.Database
+	Logger   *log.Entry
 }
 
 // Get a new handler for the search endpoint.
-func Get(cfg config.Config, db database.Database) *SearchHandler {
+func Get(cfg config.Config, db database.Database, logger *log.Entry) *SearchHandler {
 	return &SearchHandler{
-		cfg, db,
+		cfg, db, logger,
 	}
 }
 

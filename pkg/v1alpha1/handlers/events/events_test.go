@@ -24,6 +24,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/gorilla/mux"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/eiffel-community/eiffel-goer/pkg/schema"
 	"github.com/eiffel-community/eiffel-goer/test/mock_config"
@@ -84,7 +85,7 @@ func TestEvents(t *testing.T) {
 			mockCfg := mock_config.NewMockConfig(ctrl)
 			mockDB := mock_database.NewMockDatabase(ctrl)
 			mockDB.EXPECT().GetEventByID(gomock.Any(), eventID).Return(event, testCase.mockError)
-			app := Get(mockCfg, mockDB)
+			app := Get(mockCfg, mockDB, &log.Entry{})
 			handler := mux.NewRouter()
 			handler.HandleFunc("/events/{id:[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}}", app.Read)
 

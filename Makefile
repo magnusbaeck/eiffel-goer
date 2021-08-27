@@ -6,7 +6,8 @@ all: test build start
 gen:
 	go generate ./...
 build: gen
-	go build -o bin/goer ./cmd/goer
+	go get github.com/ahmetb/govvv
+	govvv build -o bin/goer ./cmd/goer
 clean:
 	rm ./bin/* || true
 	docker-compose --project-directory . -f deploy/$(DEPLOY)/docker-compose.yml rm || true

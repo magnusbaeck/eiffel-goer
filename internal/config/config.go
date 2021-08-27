@@ -23,11 +23,15 @@ import (
 type Config interface {
 	DBConnectionString() string
 	APIPort() string
+	LogLevel() string
+	LogFilePath() string
 }
 
 type Cfg struct {
 	connectionString string
 	apiPort          string
+	logLevel         string
+	logFilePath      string
 }
 
 // Get parses input parameters to program and return a config with them set.
@@ -36,6 +40,8 @@ func Get() Config {
 
 	flag.StringVar(&conf.connectionString, "connectionstring", os.Getenv("CONNECTION_STRING"), "Database connection string.")
 	flag.StringVar(&conf.apiPort, "apiport", os.Getenv("API_PORT"), "API port.")
+	flag.StringVar(&conf.logLevel, "loglevel", os.Getenv("LOGLEVEL"), "Log level (TRACE, DEBUG, INFO, WARNING, ERROR, FATAL, PANIC).")
+	flag.StringVar(&conf.logFilePath, "logfilepath", os.Getenv("LOG_FILE_PATH"), "Path, including filename, for the log files to create.")
 
 	flag.Parse()
 	return conf
@@ -49,4 +55,17 @@ func (c *Cfg) DBConnectionString() string {
 // APIPort returns the API port with a ":" prepended.
 func (c *Cfg) APIPort() string {
 	return ":" + c.apiPort
+}
+
+// LogLevel returns the log level. Default is INFO.
+func (c *Cfg) LogLevel() string {
+	if c.logLevel == "" {
+		c.logLevel = "INFO"
+	}
+	return c.logLevel
+}
+
+// LogFilePath returns the path to where log files should be stored, including filename.
+func (c *Cfg) LogFilePath() string {
+	return c.logFilePath
 }

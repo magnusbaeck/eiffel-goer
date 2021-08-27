@@ -26,6 +26,7 @@ import (
 	"net/url"
 	"strings"
 
+	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -37,10 +38,11 @@ import (
 type MongoDB struct {
 	Client   *mongo.Client
 	Database *mongo.Database
+	Logger   *log.Entry
 }
 
 // Get creates a new database.Database interface against MongoDB.
-func Get(connectionURL *url.URL) (*MongoDB, error) {
+func Get(connectionURL *url.URL, logger *log.Entry) (*MongoDB, error) {
 	client, err := mongo.NewClient(options.Client().ApplyURI(connectionURL.String()))
 	if err != nil {
 		return nil, err
@@ -50,6 +52,7 @@ func Get(connectionURL *url.URL) (*MongoDB, error) {
 	return &MongoDB{
 		Client:   client,
 		Database: client.Database(databaseName),
+		Logger:   logger,
 	}, nil
 }
 

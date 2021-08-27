@@ -15,24 +15,28 @@
 // limitations under the License.
 package database
 
-import "testing"
+import (
+	"testing"
+
+	log "github.com/sirupsen/logrus"
+)
 
 func TestGet(t *testing.T) {
-	_, err := Get("mongodb://db/test")
+	_, err := Get("mongodb://db/test", &log.Entry{})
 	if err != nil {
 		t.Error(err)
 	}
 }
 
 func TestGetUnknownScheme(t *testing.T) {
-	_, err := Get("unknown://db/test")
+	_, err := Get("unknown://db/test", &log.Entry{})
 	if err == nil {
 		t.Error("possible to get a database with unknown:// scheme")
 	}
 }
 
 func TestGetUnparsableScheme(t *testing.T) {
-	_, err := Get("://")
+	_, err := Get("://", &log.Entry{})
 	if err == nil {
 		t.Error("possible to get a database with an unparsable scheme")
 	}

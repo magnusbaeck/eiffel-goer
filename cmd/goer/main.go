@@ -17,27 +17,40 @@ package main
 
 import (
 	"context"
+	"os"
 
 	"github.com/eiffel-community/eiffel-goer/internal/config"
 	"github.com/eiffel-community/eiffel-goer/internal/logger"
 	"github.com/eiffel-community/eiffel-goer/pkg/application"
+	log "github.com/sirupsen/logrus"
 )
+
+// GitSummary contains "git describe" output and is automatically
+// populated via linker options when building with govvv.
+var GitSummary = "(unknown)"
 
 // Start up the Goer application.
 func main() {
 	cfg := config.Get()
 	ctx := context.Background()
-
-	app, err := application.Get(cfg)
+	if err := logger.Setup(cfg); err != nil {
+		log.Fatal(err)
+	}
+	log := log.WithFields(log.Fields{
+		"hostname":    os.Getenv("HOSTNAME"),
+		"application": "eiffel-goer",
+		"version":     GitSummary,
+	})
+	app, err := application.Get(cfg, log)
 	if err != nil {
-		logger.Error.Panic(err)
+		log.Panic(err)
 	}
 
 	app.LoadV1Alpha1Routes()
 
-	logger.Debug.Println("Starting up.")
+	log.Debug("Starting up.")
 	err = app.Start(ctx)
 	if err != nil {
-		logger.Error.Panic(err)
+		log.Panic(err)
 	}
 }

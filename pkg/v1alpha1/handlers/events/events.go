@@ -20,6 +20,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/eiffel-community/eiffel-goer/internal/config"
 	"github.com/eiffel-community/eiffel-goer/internal/database"
@@ -29,12 +30,13 @@ import (
 type EventHandler struct {
 	Config   config.Config
 	Database database.Database
+	Logger   *log.Entry
 }
 
 // Create a new handler for the event endpoint.
-func Get(cfg config.Config, db database.Database) *EventHandler {
+func Get(cfg config.Config, db database.Database, logger *log.Entry) *EventHandler {
 	return &EventHandler{
-		cfg, db,
+		cfg, db, logger,
 	}
 }
 

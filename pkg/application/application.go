@@ -19,6 +19,7 @@ import (
 	"context"
 
 	"github.com/gorilla/mux"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/eiffel-community/eiffel-goer/internal/config"
 	"github.com/eiffel-community/eiffel-goer/internal/database"
@@ -32,14 +33,16 @@ type Application struct {
 	Router   *mux.Router
 	Server   server.Server
 	V1Alpha1 *v1alpha1.V1Alpha1Application
+	Logger   *log.Entry
 }
 
 // Get a new Goer application.
-func Get(cfg config.Config) (*Application, error) {
+func Get(cfg config.Config, logger *log.Entry) (*Application, error) {
 	application := &Application{
 		Config: cfg,
 		Router: mux.NewRouter(),
 		Server: server.Get(),
+		Logger: logger,
 	}
 	if cfg.DBConnectionString() != "" {
 		db, err := application.getDB()
@@ -55,6 +58,7 @@ func Get(cfg config.Config) (*Application, error) {
 func (app *Application) getDB() (database.Database, error) {
 	db, err := database.Get(
 		app.Config.DBConnectionString(),
+		app.Logger,
 	)
 	if err != nil {
 		return nil, err
@@ -67,6 +71,7 @@ func (app *Application) LoadV1Alpha1Routes() {
 	app.V1Alpha1 = &v1alpha1.V1Alpha1Application{
 		Config:   app.Config,
 		Database: app.Database,
+		Logger:   app.Logger,
 	}
 	subrouter := app.Router.PathPrefix("/v1alpha1").Name("v1alpha1").Subrouter()
 	app.V1Alpha1.AddRoutes(subrouter)

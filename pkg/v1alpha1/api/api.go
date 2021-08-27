@@ -18,6 +18,8 @@ package api
 import (
 	"github.com/gorilla/mux"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/eiffel-community/eiffel-goer/internal/config"
 	"github.com/eiffel-community/eiffel-goer/internal/database"
 	"github.com/eiffel-community/eiffel-goer/pkg/v1alpha1/handlers/events"
@@ -27,12 +29,13 @@ import (
 type V1Alpha1Application struct {
 	Database database.Database
 	Config   config.Config
+	Logger   *log.Entry
 }
 
 // Add routes for all handlers to the router.
 func (app *V1Alpha1Application) AddRoutes(router *mux.Router) {
-	eventHandler := events.Get(app.Config, app.Database)
-	searchHandler := search.Get(app.Config, app.Database)
+	eventHandler := events.Get(app.Config, app.Database, app.Logger)
+	searchHandler := search.Get(app.Config, app.Database, app.Logger)
 
 	router.HandleFunc("/events", eventHandler.ReadAll).Methods("GET", "OPTIONS")
 	router.HandleFunc("/events/{id:[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}}", eventHandler.Read).Methods("GET", "OPTIONS")

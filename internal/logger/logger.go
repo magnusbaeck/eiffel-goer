@@ -16,15 +16,35 @@
 package logger
 
 import (
-	"log"
-	"os"
+	"github.com/sirupsen/logrus"
+	"github.com/snowzach/rotatefilehook"
+
+	"github.com/eiffel-community/eiffel-goer/internal/config"
 )
 
-// Add some logging handlers that can be used to append
-// log level to the log message. Also redirect Error to Stderr.
-var (
-	Debug   = log.New(os.Stdout, "DEBUG\t", log.Ldate|log.Ltime)
-	Info    = log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
-	Warning = log.New(os.Stdout, "WARNING\t", log.Ldate|log.Ltime)
-	Error   = log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
-)
+// Setup sets up logging to file with a JSON format and to stdout in text format.
+func Setup(cfg config.Config) error {
+	logLevel, err := logrus.ParseLevel(cfg.LogLevel())
+	if err != nil {
+		return err
+	}
+	filePath := cfg.LogFilePath()
+	if filePath != "" {
+		// TODO: Make these parameters configurable.
+		rotateFileHook, err := rotatefilehook.NewRotateFileHook(rotatefilehook.RotateFileConfig{
+			Filename:   filePath,
+			MaxSize:    10, // megabytes
+			MaxBackups: 3,
+			MaxAge:     0, // days
+			Level:      logrus.DebugLevel,
+			Formatter:  &logrus.JSONFormatter{},
+		})
+		if err != nil {
+			return err
+		}
+		logrus.AddHook(rotateFileHook)
+	}
+	logrus.SetLevel(logLevel)
+	logrus.SetFormatter(&logrus.TextFormatter{})
+	return nil
+}

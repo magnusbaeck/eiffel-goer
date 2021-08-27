@@ -24,8 +24,12 @@ import (
 func TestGet(t *testing.T) {
 	port := "8080"
 	connectionString := "connection string"
+	logLevel := "DEBUG"
+	logFilePath := "path/to/a/file"
 	os.Setenv("CONNECTION_STRING", connectionString)
 	os.Setenv("API_PORT", port)
+	os.Setenv("LOGLEVEL", logLevel)
+	os.Setenv("LOG_FILE_PATH", logFilePath)
 
 	cfg, ok := Get().(*Cfg)
 	if !ok {
@@ -37,24 +41,42 @@ func TestGet(t *testing.T) {
 	if cfg.apiPort != port {
 		t.Error("api port not set to environment variable API_PORT")
 	}
-}
-
-// Test that DBConnectionString return the connectionString value from the Cfg struct
-func TestDBConnectionString(t *testing.T) {
-	cfg := &Cfg{
-		connectionString: "connectionString",
+	if cfg.logLevel != logLevel {
+		t.Error("log level not set to environment variable LOGLEVEL")
 	}
-	if cfg.DBConnectionString() != "connectionString" {
-		t.Error("function does not return the connectionString from Cfg struct")
+	if cfg.logFilePath != logFilePath {
+		t.Error("log file path not set to environment variable LOG_FILE_PATH")
 	}
 }
 
-// Test that APIPort return the value from Cfg struct with a ':' at the start
-func TestAPIPort(t *testing.T) {
+type getter func() string
+
+// Test that the getters in the Cfg struct return the values from the struct.
+func TestGetters(t *testing.T) {
 	cfg := &Cfg{
-		apiPort: "8080",
+		connectionString: "something://db/test",
+		apiPort:          "8080",
+		logLevel:         "TRACE",
+		logFilePath:      "a/file/path.json",
 	}
-	if cfg.APIPort() != ":8080" {
-		t.Error("function does not return the apiPort from Cfg struct")
+	emptyCfg := &Cfg{}
+	tests := []struct {
+		name     string
+		cfg      *Cfg
+		function getter
+		value    string
+	}{
+		{name: "DBConnectionString", cfg: cfg, function: cfg.DBConnectionString, value: cfg.connectionString},
+		{name: "APIPort", cfg: cfg, function: cfg.APIPort, value: ":" + cfg.apiPort},
+		{name: "LogLevel", cfg: cfg, function: cfg.LogLevel, value: cfg.logLevel},
+		{name: "LogLevelDefault", cfg: emptyCfg, function: emptyCfg.LogLevel, value: "INFO"},
+		{name: "LogFilePath", cfg: cfg, function: cfg.LogFilePath, value: cfg.logFilePath},
+	}
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			if testCase.function() != testCase.value {
+				t.Errorf("function does not return %q from Cfg struct", testCase.value)
+			}
+		})
 	}
 }

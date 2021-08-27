@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/eiffel-community/eiffel-goer/internal/database"
 	"github.com/eiffel-community/eiffel-goer/test/mock_config"
@@ -34,7 +35,7 @@ func TestGet(t *testing.T) {
 	mockCfg := mock_config.NewMockConfig(ctrl)
 	mockCfg.EXPECT().DBConnectionString().Return("mongodb://testdb/testdb").Times(2)
 
-	app, err := Get(mockCfg)
+	app, err := Get(mockCfg, &log.Entry{})
 	if err != nil {
 		t.Error(err)
 	}
@@ -58,7 +59,7 @@ func TestGetNoDB(t *testing.T) {
 	mockCfg := mock_config.NewMockConfig(ctrl)
 	mockCfg.EXPECT().DBConnectionString().Return("")
 
-	app, err := Get(mockCfg)
+	app, err := Get(mockCfg, &log.Entry{})
 	if err != nil {
 		t.Error(err)
 	}
@@ -82,7 +83,7 @@ func TestGetDBError(t *testing.T) {
 	mockCfg := mock_config.NewMockConfig(ctrl)
 	mockCfg.EXPECT().DBConnectionString().Return("invalid://testdb").Times(2)
 
-	_, err := Get(mockCfg)
+	_, err := Get(mockCfg, &log.Entry{})
 	if err == nil {
 		t.Error("application should have raised error due to invalid database connection string")
 	}
@@ -112,7 +113,7 @@ func TestLoadV1Alpha1Routes(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockCfg := mock_config.NewMockConfig(ctrl)
 	mockCfg.EXPECT().DBConnectionString().Return("mongodb://testdb/testdb").Times(2)
-	app, err := Get(mockCfg)
+	app, err := Get(mockCfg, &log.Entry{})
 	if err != nil {
 		t.Error(err)
 	}
@@ -135,7 +136,7 @@ func TestStart(t *testing.T) {
 	mockCfg.EXPECT().DBConnectionString().Return("mongodb://testdb/testdb").Times(2)
 	mockCfg.EXPECT().APIPort().Return(":8080")
 
-	app, err := Get(mockCfg)
+	app, err := Get(mockCfg, &log.Entry{})
 	if err != nil {
 		t.Error(err)
 	}
@@ -169,7 +170,7 @@ func TestStartAbort(t *testing.T) {
 	mockCfg.EXPECT().DBConnectionString().Return("mongodb://testdb/testdb").Times(2)
 	mockCfg.EXPECT().APIPort().Return(":8080")
 
-	app, err := Get(mockCfg)
+	app, err := Get(mockCfg, &log.Entry{})
 	if err != nil {
 		t.Error(err)
 	}
@@ -200,7 +201,7 @@ func TestStartFail(t *testing.T) {
 	mockCfg.EXPECT().DBConnectionString().Return("mongodb://testdb/testdb").Times(2)
 	mockCfg.EXPECT().APIPort().Return("")
 
-	app, err := Get(mockCfg)
+	app, err := Get(mockCfg, &log.Entry{})
 	if err != nil {
 		t.Error(err)
 	}
@@ -229,7 +230,7 @@ func TestStop(t *testing.T) {
 
 	mockCfg.EXPECT().DBConnectionString().Return("mongodb://testdb/testdb").Times(2)
 
-	app, err := Get(mockCfg)
+	app, err := Get(mockCfg, &log.Entry{})
 	if err != nil {
 		t.Error(err)
 	}

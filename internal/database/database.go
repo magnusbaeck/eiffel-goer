@@ -20,6 +20,8 @@ import (
 	"fmt"
 	"net/url"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/eiffel-community/eiffel-goer/internal/database/drivers/mongodb"
 	"github.com/eiffel-community/eiffel-goer/pkg/schema"
 )
@@ -34,14 +36,14 @@ type Database interface {
 }
 
 // Get a new Database.
-func Get(connectionString string) (Database, error) {
+func Get(connectionString string, logger *log.Entry) (Database, error) {
 	connectionURL, err := url.Parse(connectionString)
 	if err != nil {
 		return nil, err
 	}
 	switch connectionURL.Scheme {
 	case "mongodb":
-		return mongodb.Get(connectionURL)
+		return mongodb.Get(connectionURL, logger)
 	default:
 		return nil, fmt.Errorf("cannot find database for scheme %q", connectionURL.Scheme)
 	}
