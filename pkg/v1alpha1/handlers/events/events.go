@@ -41,8 +41,7 @@ func Get(cfg config.Config, db database.Database, logger *log.Entry) *EventHandl
 }
 
 type EventsSingleRequest struct {
-	ID      string `schema:"id"`
-	Shallow bool   `schema:"shallow"` // TODO: Unused
+	Shallow bool `schema:"shallow"` // TODO: Unused
 }
 
 // Read handles GET requests against the /events/{id} endpoint.
@@ -54,8 +53,8 @@ func (h *EventHandler) Read(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	vars := mux.Vars(r)
-	request.ID = vars["id"]
-	event, err := h.Database.GetEventByID(r.Context(), request.ID)
+	ID := vars["id"]
+	event, err := h.Database.GetEventByID(r.Context(), ID)
 	if err != nil {
 		responses.RespondWithError(w, http.StatusNotFound, err.Error())
 		return
