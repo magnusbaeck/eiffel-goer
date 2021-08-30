@@ -23,12 +23,13 @@ import (
 
 	"github.com/eiffel-community/eiffel-goer/internal/config"
 	"github.com/eiffel-community/eiffel-goer/internal/database"
+	"github.com/eiffel-community/eiffel-goer/internal/database/drivers"
 	"github.com/eiffel-community/eiffel-goer/pkg/server"
 	v1alpha1 "github.com/eiffel-community/eiffel-goer/pkg/v1alpha1/api"
 )
 
 type Application struct {
-	Database database.Database
+	Database drivers.DatabaseDriver
 	Config   config.Config
 	Router   *mux.Router
 	Server   server.Server
@@ -55,7 +56,7 @@ func Get(cfg config.Config, logger *log.Entry) (*Application, error) {
 }
 
 // getDB gets, but does not connect to, a database.
-func (app *Application) getDB() (database.Database, error) {
+func (app *Application) getDB() (drivers.DatabaseDriver, error) {
 	db, err := database.Get(
 		app.Config.DBConnectionString(),
 		app.Logger,

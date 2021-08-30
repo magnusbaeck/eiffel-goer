@@ -28,7 +28,7 @@ import (
 
 	"github.com/eiffel-community/eiffel-goer/pkg/schema"
 	"github.com/eiffel-community/eiffel-goer/test/mock_config"
-	"github.com/eiffel-community/eiffel-goer/test/mock_database"
+	"github.com/eiffel-community/eiffel-goer/test/mock_drivers"
 )
 
 var activityJSON = []byte(`
@@ -83,7 +83,7 @@ func TestEvents(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			mockCfg := mock_config.NewMockConfig(ctrl)
-			mockDB := mock_database.NewMockDatabase(ctrl)
+			mockDB := mock_drivers.NewMockDatabaseDriver(ctrl)
 			mockDB.EXPECT().GetEventByID(gomock.Any(), eventID).Return(event, testCase.mockError)
 			app := Get(mockCfg, mockDB, &log.Entry{})
 			handler := mux.NewRouter()

@@ -32,32 +32,45 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 
+	"github.com/eiffel-community/eiffel-goer/internal/database/drivers"
 	"github.com/eiffel-community/eiffel-goer/pkg/schema"
 )
 
-type MongoDB struct {
+type Driver struct {
 	Client   *mongo.Client
 	Database *mongo.Database
 	Logger   *log.Entry
 }
 
 // Get creates a new database.Database interface against MongoDB.
-func Get(connectionURL *url.URL, logger *log.Entry) (*MongoDB, error) {
+func (m *Driver) Get(connectionURL *url.URL, logger *log.Entry) (drivers.DatabaseDriver, error) {
 	client, err := mongo.NewClient(options.Client().ApplyURI(connectionURL.String()))
 	if err != nil {
 		return nil, err
 	}
 	// The Path value from url.URL always has a '/' prepended.
 	databaseName := strings.Split(connectionURL.Path, "/")[1]
-	return &MongoDB{
+	return &Driver{
 		Client:   client,
 		Database: client.Database(databaseName),
 		Logger:   logger,
 	}, nil
 }
 
+// Test whether the MongoDB driver supports a scheme.
+func (m *Driver) SupportsScheme(scheme string) bool {
+	switch scheme {
+	case "mongodb":
+		return true
+	case "mongodb+srv":
+		return true
+	default:
+		return false
+	}
+}
+
 // Connect to the MongoDB database and ping it to make sure it works.
-func (m *MongoDB) Connect(ctx context.Context) error {
+func (m *Driver) Connect(ctx context.Context) error {
 	err := m.Client.Connect(ctx)
 	if err != nil {
 		return err
@@ -66,22 +79,22 @@ func (m *MongoDB) Connect(ctx context.Context) error {
 }
 
 // GetEvents gets all events information.
-func (m *MongoDB) GetEvents(ctx context.Context) ([]schema.EiffelEvent, error) {
+func (m *Driver) GetEvents(ctx context.Context) ([]schema.EiffelEvent, error) {
 	return nil, errors.New("not yet implemented")
 }
 
 // SearchEvent searches for an event based on event ID.
-func (m *MongoDB) SearchEvent(ctx context.Context, id string) (schema.EiffelEvent, error) {
+func (m *Driver) SearchEvent(ctx context.Context, id string) (schema.EiffelEvent, error) {
 	return schema.EiffelEvent{}, errors.New("not yet implemented")
 }
 
 // UpstreamDownstreamSearch searches for events upstream and/or downstream of event by ID.
-func (m *MongoDB) UpstreamDownstreamSearch(ctx context.Context, id string) ([]schema.EiffelEvent, error) {
+func (m *Driver) UpstreamDownstreamSearch(ctx context.Context, id string) ([]schema.EiffelEvent, error) {
 	return nil, errors.New("not yet implemented")
 }
 
 // GetEventByID gets an event by ID in all collections.
-func (m *MongoDB) GetEventByID(ctx context.Context, id string) (schema.EiffelEvent, error) {
+func (m *Driver) GetEventByID(ctx context.Context, id string) (schema.EiffelEvent, error) {
 	collections, err := m.Database.ListCollectionNames(ctx, bson.D{})
 	if err != nil {
 		return schema.EiffelEvent{}, err
@@ -101,6 +114,6 @@ func (m *MongoDB) GetEventByID(ctx context.Context, id string) (schema.EiffelEve
 }
 
 // Close the database connection.
-func (m *MongoDB) Close(ctx context.Context) error {
+func (m *Driver) Close(ctx context.Context) error {
 	return m.Client.Disconnect(ctx)
 }

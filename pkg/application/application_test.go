@@ -23,9 +23,9 @@ import (
 	"github.com/golang/mock/gomock"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/eiffel-community/eiffel-goer/internal/database"
+	"github.com/eiffel-community/eiffel-goer/internal/database/drivers"
 	"github.com/eiffel-community/eiffel-goer/test/mock_config"
-	"github.com/eiffel-community/eiffel-goer/test/mock_database"
+	"github.com/eiffel-community/eiffel-goer/test/mock_drivers"
 	"github.com/eiffel-community/eiffel-goer/test/mock_server"
 )
 
@@ -102,7 +102,7 @@ func TestGetDB(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	_, ok := db.(database.Database)
+	_, ok := db.(drivers.DatabaseDriver)
 	if !ok {
 		t.Error("database from 'getDB' is not a Database interface")
 	}
@@ -129,7 +129,7 @@ func TestLoadV1Alpha1Routes(t *testing.T) {
 func TestStart(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockCfg := mock_config.NewMockConfig(ctrl)
-	mockDB := mock_database.NewMockDatabase(ctrl)
+	mockDB := mock_drivers.NewMockDatabaseDriver(ctrl)
 	mockServer := mock_server.NewMockServer(ctrl)
 	ctx := context.Background()
 
@@ -163,7 +163,7 @@ func TestStartAbort(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	mockCfg := mock_config.NewMockConfig(ctrl)
-	mockDB := mock_database.NewMockDatabase(ctrl)
+	mockDB := mock_drivers.NewMockDatabaseDriver(ctrl)
 	mockServer := mock_server.NewMockServer(ctrl)
 	ctx := context.Background()
 
@@ -194,7 +194,7 @@ func TestStartAbort(t *testing.T) {
 func TestStartFail(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockCfg := mock_config.NewMockConfig(ctrl)
-	mockDB := mock_database.NewMockDatabase(ctrl)
+	mockDB := mock_drivers.NewMockDatabaseDriver(ctrl)
 	mockServer := mock_server.NewMockServer(ctrl)
 	ctx := context.Background()
 
@@ -225,7 +225,7 @@ func TestStartFail(t *testing.T) {
 func TestStop(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockCfg := mock_config.NewMockConfig(ctrl)
-	mockDB := mock_database.NewMockDatabase(ctrl)
+	mockDB := mock_drivers.NewMockDatabaseDriver(ctrl)
 	ctx := context.Background()
 
 	mockCfg.EXPECT().DBConnectionString().Return("mongodb://testdb/testdb").Times(2)

@@ -29,7 +29,7 @@ import (
 	"github.com/eiffel-community/eiffel-goer/pkg/application"
 	"github.com/eiffel-community/eiffel-goer/pkg/schema"
 	"github.com/eiffel-community/eiffel-goer/test/mock_config"
-	"github.com/eiffel-community/eiffel-goer/test/mock_database"
+	"github.com/eiffel-community/eiffel-goer/test/mock_drivers"
 )
 
 // Test that all v1alpha1 endpoints are added properly.
@@ -49,7 +49,7 @@ func TestRoutes(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	mockCfg := mock_config.NewMockConfig(ctrl)
-	mockDB := mock_database.NewMockDatabase(ctrl)
+	mockDB := mock_drivers.NewMockDatabaseDriver(ctrl)
 
 	mockCfg.EXPECT().DBConnectionString().Return("").AnyTimes()
 	mockCfg.EXPECT().APIPort().Return(":8080").AnyTimes()

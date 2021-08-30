@@ -16,35 +16,27 @@
 package database
 
 import (
-	"context"
 	"fmt"
 	"net/url"
 
 	log "github.com/sirupsen/logrus"
 
+	"github.com/eiffel-community/eiffel-goer/internal/database/drivers"
 	"github.com/eiffel-community/eiffel-goer/internal/database/drivers/mongodb"
-	"github.com/eiffel-community/eiffel-goer/pkg/schema"
 )
 
-type Database interface {
-	Connect(context.Context) error
-	GetEvents(context.Context) ([]schema.EiffelEvent, error)
-	SearchEvent(context.Context, string) (schema.EiffelEvent, error)
-	UpstreamDownstreamSearch(context.Context, string) ([]schema.EiffelEvent, error)
-	GetEventByID(context.Context, string) (schema.EiffelEvent, error)
-	Close(context.Context) error
-}
-
 // Get a new Database.
-func Get(connectionString string, logger *log.Entry) (Database, error) {
+func Get(connectionString string, logger *log.Entry) (drivers.DatabaseDriver, error) {
+	var drivers = []drivers.DatabaseDriver{&mongodb.Driver{}}
+
 	connectionURL, err := url.Parse(connectionString)
 	if err != nil {
 		return nil, err
 	}
-	switch connectionURL.Scheme {
-	case "mongodb":
-		return mongodb.Get(connectionURL, logger)
-	default:
-		return nil, fmt.Errorf("cannot find database for scheme %q", connectionURL.Scheme)
+	for _, driver := range drivers {
+		if driver.SupportsScheme(connectionURL.Scheme) {
+			return driver.Get(connectionURL, logger)
+		}
 	}
+	return nil, fmt.Errorf("cannot find database for scheme %q", connectionURL.Scheme)
 }

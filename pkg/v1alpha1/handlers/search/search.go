@@ -21,18 +21,18 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/eiffel-community/eiffel-goer/internal/config"
-	"github.com/eiffel-community/eiffel-goer/internal/database"
+	"github.com/eiffel-community/eiffel-goer/internal/database/drivers"
 	"github.com/eiffel-community/eiffel-goer/internal/responses"
 )
 
 type SearchHandler struct {
 	Config   config.Config
-	Database database.Database
+	Database drivers.DatabaseDriver
 	Logger   *log.Entry
 }
 
 // Get a new handler for the search endpoint.
-func Get(cfg config.Config, db database.Database, logger *log.Entry) *SearchHandler {
+func Get(cfg config.Config, db drivers.DatabaseDriver, logger *log.Entry) *SearchHandler {
 	return &SearchHandler{
 		cfg, db, logger,
 	}

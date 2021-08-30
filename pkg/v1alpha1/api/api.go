@@ -21,13 +21,13 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/eiffel-community/eiffel-goer/internal/config"
-	"github.com/eiffel-community/eiffel-goer/internal/database"
+	"github.com/eiffel-community/eiffel-goer/internal/database/drivers"
 	"github.com/eiffel-community/eiffel-goer/pkg/v1alpha1/handlers/events"
 	"github.com/eiffel-community/eiffel-goer/pkg/v1alpha1/handlers/search"
 )
 
 type V1Alpha1Application struct {
-	Database database.Database
+	Database drivers.DatabaseDriver
 	Config   config.Config
 	Logger   *log.Entry
 }

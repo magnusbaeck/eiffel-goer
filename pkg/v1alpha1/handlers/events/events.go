@@ -23,18 +23,18 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/eiffel-community/eiffel-goer/internal/config"
-	"github.com/eiffel-community/eiffel-goer/internal/database"
+	"github.com/eiffel-community/eiffel-goer/internal/database/drivers"
 	"github.com/eiffel-community/eiffel-goer/internal/responses"
 )
 
 type EventHandler struct {
 	Config   config.Config
-	Database database.Database
+	Database drivers.DatabaseDriver
 	Logger   *log.Entry
 }
 
 // Create a new handler for the event endpoint.
-func Get(cfg config.Config, db database.Database, logger *log.Entry) *EventHandler {
+func Get(cfg config.Config, db drivers.DatabaseDriver, logger *log.Entry) *EventHandler {
 	return &EventHandler{
 		cfg, db, logger,
 	}

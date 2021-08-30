@@ -13,10 +13,24 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+package drivers
 
-// This package is only for generating the mocks that are used in test.
-package test
+import (
+	"context"
+	"net/url"
 
-//go:generate mockgen -destination mock_drivers/mock_drivers.go github.com/eiffel-community/eiffel-goer/internal/database/drivers DatabaseDriver
-//go:generate mockgen -destination mock_config/mock_config.go github.com/eiffel-community/eiffel-goer/internal/config Config
-//go:generate mockgen -destination mock_server/mock_server.go github.com/eiffel-community/eiffel-goer/pkg/server Server
+	log "github.com/sirupsen/logrus"
+
+	"github.com/eiffel-community/eiffel-goer/pkg/schema"
+)
+
+type DatabaseDriver interface {
+	Get(*url.URL, *log.Entry) (DatabaseDriver, error)
+	SupportsScheme(string) bool
+	Connect(context.Context) error
+	GetEvents(context.Context) ([]schema.EiffelEvent, error)
+	SearchEvent(context.Context, string) (schema.EiffelEvent, error)
+	UpstreamDownstreamSearch(context.Context, string) ([]schema.EiffelEvent, error)
+	GetEventByID(context.Context, string) (schema.EiffelEvent, error)
+	Close(context.Context) error
+}
