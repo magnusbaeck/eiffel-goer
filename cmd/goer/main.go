@@ -36,8 +36,12 @@ func main() {
 	if err := logger.Setup(cfg); err != nil {
 		log.Fatal(err)
 	}
+	hostname, err := os.Hostname()
+	if err != nil {
+		log.Fatal(err)
+	}
 	log := log.WithFields(log.Fields{
-		"hostname":    os.Getenv("HOSTNAME"),
+		"hostname":    hostname,
 		"application": "eiffel-goer",
 		"version":     GitSummary,
 	})
