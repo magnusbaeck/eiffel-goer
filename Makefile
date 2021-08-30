@@ -6,7 +6,7 @@ all: test build start
 gen:
 	go generate ./...
 build: gen
-	go get github.com/ahmetb/govvv
+	go get github.com/ahmetb/govvv@v0.3.0
 	govvv build -o bin/goer ./cmd/goer
 clean:
 	rm ./bin/* || true
