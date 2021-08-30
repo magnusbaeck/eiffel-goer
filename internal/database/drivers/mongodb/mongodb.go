@@ -24,13 +24,13 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
-	"strings"
 
 	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
+	"go.mongodb.org/mongo-driver/x/mongo/driver/connstring"
 
 	"github.com/eiffel-community/eiffel-goer/internal/database/drivers"
 	"github.com/eiffel-community/eiffel-goer/pkg/schema"
@@ -48,11 +48,13 @@ func (m *Driver) Get(connectionURL *url.URL, logger *log.Entry) (drivers.Databas
 	if err != nil {
 		return nil, err
 	}
-	// The Path value from url.URL always has a '/' prepended.
-	databaseName := strings.Split(connectionURL.Path, "/")[1]
+	connectionString, err := connstring.Parse(connectionURL.String())
+	if err != nil {
+		return nil, err
+	}
 	return &Driver{
 		Client:   client,
-		Database: client.Database(databaseName),
+		Database: client.Database(connectionString.Database),
 		Logger:   logger,
 	}, nil
 }
