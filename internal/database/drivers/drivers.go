@@ -21,7 +21,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/eiffel-community/eiffel-goer/pkg/schema"
+	"github.com/eiffel-community/eiffel-goer/internal/schema"
 )
 
 type DatabaseDriver interface {

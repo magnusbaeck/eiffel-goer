@@ -33,7 +33,7 @@ import (
 	"go.mongodb.org/mongo-driver/x/mongo/driver/connstring"
 
 	"github.com/eiffel-community/eiffel-goer/internal/database/drivers"
-	"github.com/eiffel-community/eiffel-goer/pkg/schema"
+	"github.com/eiffel-community/eiffel-goer/internal/schema"
 )
 
 type Driver struct {

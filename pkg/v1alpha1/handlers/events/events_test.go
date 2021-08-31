@@ -26,7 +26,7 @@ import (
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/eiffel-community/eiffel-goer/pkg/schema"
+	"github.com/eiffel-community/eiffel-goer/internal/schema"
 	"github.com/eiffel-community/eiffel-goer/test/mock_config"
 	"github.com/eiffel-community/eiffel-goer/test/mock_drivers"
 )

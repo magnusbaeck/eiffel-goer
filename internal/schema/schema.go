@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// This package shall be removed then the Eiffel Go SDK is finished.
+// This package shall be removed when the Eiffel Go SDK is finished.
 package schema
 
 type EiffelEvent struct {

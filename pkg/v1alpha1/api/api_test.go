@@ -26,8 +26,8 @@ import (
 	"github.com/golang/mock/gomock"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/eiffel-community/eiffel-goer/internal/schema"
 	"github.com/eiffel-community/eiffel-goer/pkg/application"
-	"github.com/eiffel-community/eiffel-goer/pkg/schema"
 	"github.com/eiffel-community/eiffel-goer/test/mock_config"
 	"github.com/eiffel-community/eiffel-goer/test/mock_drivers"
 )
