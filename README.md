@@ -17,7 +17,7 @@ Eiffel Goer implements the event repository API and is intended as an open sourc
 
 ### Docker
 
-    docker run -e CONNECTION_STRING=yourdb -e DATABASE_NAME=dbname -e API_PORT=8080 registry.nordix.org/eiffel/goer
+    docker run -e CONNECTION_STRING=yourdb -e API_PORT=8080 registry.nordix.org/eiffel/goer
 
 ### Running a development server locally for testing. Will restart on code changes.
 

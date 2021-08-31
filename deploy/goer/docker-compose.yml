@@ -1,0 +1,35 @@
+version: "3.7"
+volumes:
+    goer-volume:
+        name: "goer-volume"
+networks:
+    goer-network:
+        name: "goer-network"
+services:
+    db:
+        image: 'mongo'
+        restart: on-failure
+        env_file:
+            - ./configs/development.env
+        ports:
+            - '27017-27019:27017-27019'
+        volumes:
+            - goer-volume:/data/db
+            - ./scripts/database:/docker-entrypoint-initdb.d/
+        networks:
+            - goer-network
+    apis:
+        build:
+            context: .
+            dockerfile: ./deploy/goer/Dockerfile.dev
+        depends_on:
+            - db
+        volumes:
+            - ./:/app
+        ports:
+            - 9090:9090
+        networks:
+            - goer-network
+        env_file:
+            - ./configs/development.env
+        entrypoint: ["/bin/bash", "./scripts/entrypoint.sh"]
