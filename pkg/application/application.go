@@ -29,7 +29,7 @@ import (
 )
 
 type Application struct {
-	Database drivers.DatabaseDriver
+	Database drivers.Database
 	Config   config.Config
 	Router   *mux.Router
 	Server   server.Server
@@ -38,7 +38,7 @@ type Application struct {
 }
 
 // Get a new Goer application.
-func Get(cfg config.Config, logger *log.Entry) (*Application, error) {
+func Get(ctx context.Context, cfg config.Config, logger *log.Entry) (*Application, error) {
 	application := &Application{
 		Config: cfg,
 		Router: mux.NewRouter(),
@@ -46,7 +46,7 @@ func Get(cfg config.Config, logger *log.Entry) (*Application, error) {
 		Logger: logger,
 	}
 	if cfg.DBConnectionString() != "" {
-		db, err := application.getDB()
+		db, err := application.getDB(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -55,9 +55,10 @@ func Get(cfg config.Config, logger *log.Entry) (*Application, error) {
 	return application, nil
 }
 
-// getDB gets, but does not connect to, a database.
-func (app *Application) getDB() (drivers.DatabaseDriver, error) {
+// getDB gets, and connects to, a database.
+func (app *Application) getDB(ctx context.Context) (drivers.Database, error) {
 	db, err := database.Get(
+		ctx,
 		app.Config.DBConnectionString(),
 		app.Logger,
 	)
@@ -82,12 +83,8 @@ func (app *Application) LoadV1Alpha1Routes() {
 // This is a blocking function, waiting for the webserver to shut down.
 func (app *Application) Start(ctx context.Context) error {
 	srv := app.Server.WithAddr(app.Config.APIPort()).WithRouter(app.Router)
-	err := app.Database.Connect(ctx)
-	if err != nil {
-		return err
-	}
 	defer app.Stop(ctx)
-	err = srv.Start()
+	err := srv.Start()
 	if err != nil {
 		return err
 	}

@@ -45,7 +45,7 @@ func main() {
 		"application": "eiffel-goer",
 		"version":     GitSummary,
 	})
-	app, err := application.Get(cfg, log)
+	app, err := application.Get(ctx, cfg, log)
 	if err != nil {
 		log.Panic(err)
 	}

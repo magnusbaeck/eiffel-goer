@@ -19,6 +19,7 @@
 package api_test
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -49,7 +50,7 @@ func TestRoutes(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	mockCfg := mock_config.NewMockConfig(ctrl)
-	mockDB := mock_drivers.NewMockDatabaseDriver(ctrl)
+	mockDB := mock_drivers.NewMockDatabase(ctrl)
 
 	mockCfg.EXPECT().DBConnectionString().Return("").AnyTimes()
 	mockCfg.EXPECT().APIPort().Return(":8080").AnyTimes()
@@ -60,7 +61,8 @@ func TestRoutes(t *testing.T) {
 
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {
-			app, err := application.Get(mockCfg, &log.Entry{})
+			ctx := context.Background()
+			app, err := application.Get(ctx, mockCfg, &log.Entry{})
 			if err != nil {
 				t.Error(err)
 			}

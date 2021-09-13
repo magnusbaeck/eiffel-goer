@@ -36,31 +36,30 @@ import (
 	"github.com/eiffel-community/eiffel-goer/internal/schema"
 )
 
+// Database is a MongoDB database connection.
 type Driver struct {
-	Client   *mongo.Client
-	Database *mongo.Database
-	Logger   *log.Entry
+	logger           *log.Entry
+	client           *mongo.Client
+	connectionString connstring.ConnString
 }
 
-// Get creates a new database.Database interface against MongoDB.
-func (m *Driver) Get(connectionURL *url.URL, logger *log.Entry) (drivers.DatabaseDriver, error) {
+// Get creates and connects a new database.Database interface against MongoDB.
+func (d *Driver) Get(ctx context.Context, connectionURL *url.URL, logger *log.Entry) (drivers.Database, error) {
 	client, err := mongo.NewClient(options.Client().ApplyURI(connectionURL.String()))
 	if err != nil {
 		return nil, err
 	}
+	d.client = client
 	connectionString, err := connstring.Parse(connectionURL.String())
 	if err != nil {
 		return nil, err
 	}
-	return &Driver{
-		Client:   client,
-		Database: client.Database(connectionString.Database),
-		Logger:   logger,
-	}, nil
+	d.connectionString = connectionString
+	return d.connect(ctx)
 }
 
 // Test whether the MongoDB driver supports a scheme.
-func (m *Driver) SupportsScheme(scheme string) bool {
+func (d *Driver) SupportsScheme(scheme string) bool {
 	switch scheme {
 	case "mongodb":
 		return true
@@ -72,39 +71,53 @@ func (m *Driver) SupportsScheme(scheme string) bool {
 }
 
 // Connect to the MongoDB database and ping it to make sure it works.
-func (m *Driver) Connect(ctx context.Context) error {
-	err := m.Client.Connect(ctx)
+func (d *Driver) connect(ctx context.Context) (drivers.Database, error) {
+	err := d.client.Connect(ctx)
 	if err != nil {
-		return err
+		return &Database{}, err
 	}
-	return m.Client.Ping(ctx, readpref.Primary())
+	if err = d.client.Ping(ctx, readpref.Primary()); err != nil {
+		return &Database{}, err
+	}
+	return &Database{
+		database: d.client.Database(d.connectionString.Database),
+		client:   d.client,
+		logger:   d.logger,
+	}, nil
+}
+
+// Database is a connected database interface for requesting events from MongoDB.
+type Database struct {
+	database *mongo.Database
+	client   *mongo.Client
+	logger   *log.Entry
 }
 
 // GetEvents gets all events information.
-func (m *Driver) GetEvents(ctx context.Context) ([]schema.EiffelEvent, error) {
+func (m *Database) GetEvents(ctx context.Context) ([]schema.EiffelEvent, error) {
 	return nil, errors.New("not yet implemented")
 }
 
 // SearchEvent searches for an event based on event ID.
-func (m *Driver) SearchEvent(ctx context.Context, id string) (schema.EiffelEvent, error) {
+func (m *Database) SearchEvent(ctx context.Context, id string) (schema.EiffelEvent, error) {
 	return schema.EiffelEvent{}, errors.New("not yet implemented")
 }
 
 // UpstreamDownstreamSearch searches for events upstream and/or downstream of event by ID.
-func (m *Driver) UpstreamDownstreamSearch(ctx context.Context, id string) ([]schema.EiffelEvent, error) {
+func (m *Database) UpstreamDownstreamSearch(ctx context.Context, id string) ([]schema.EiffelEvent, error) {
 	return nil, errors.New("not yet implemented")
 }
 
 // GetEventByID gets an event by ID in all collections.
-func (m *Driver) GetEventByID(ctx context.Context, id string) (schema.EiffelEvent, error) {
-	collections, err := m.Database.ListCollectionNames(ctx, bson.D{})
+func (m *Database) GetEventByID(ctx context.Context, id string) (schema.EiffelEvent, error) {
+	collections, err := m.database.ListCollectionNames(ctx, bson.D{})
 	if err != nil {
 		return schema.EiffelEvent{}, err
 	}
 	filter := bson.D{{"meta.id", id}}
 	for _, collection := range collections {
 		var event schema.EiffelEvent
-		singleResult := m.Database.Collection(collection).FindOne(ctx, filter)
+		singleResult := m.database.Collection(collection).FindOne(ctx, filter)
 		err := singleResult.Decode(&event)
 		if err != nil {
 			continue
@@ -116,6 +129,6 @@ func (m *Driver) GetEventByID(ctx context.Context, id string) (schema.EiffelEven
 }
 
 // Close the database connection.
-func (m *Driver) Close(ctx context.Context) error {
-	return m.Client.Disconnect(ctx)
+func (m *Database) Close(ctx context.Context) error {
+	return m.client.Disconnect(ctx)
 }
