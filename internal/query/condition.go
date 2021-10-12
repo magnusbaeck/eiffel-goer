@@ -13,27 +13,24 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package drivers
 
-import (
-	"context"
-	"net/url"
+// query is used to generate the query.go file from query.peg
+// using pigeon as well as adding functions to the query.go package.
+package query
 
-	log "github.com/sirupsen/logrus"
+//go:generate pigeon -o query.go query.peg
 
-	"github.com/eiffel-community/eiffel-goer/internal/requests"
-	"github.com/eiffel-community/eiffel-goer/internal/schema"
-)
-
-type DatabaseDriver interface {
-	Get(context.Context, *url.URL, *log.Entry) (Database, error)
-	SupportsScheme(string) bool
+type Condition struct {
+	Field    string
+	Op       string
+	Value    string
+	TypeConv string
 }
 
-type Database interface {
-	GetEvents(context.Context, requests.MultipleEventsRequest) ([]schema.EiffelEvent, error)
-	SearchEvent(context.Context, string) (schema.EiffelEvent, error)
-	UpstreamDownstreamSearch(context.Context, string) ([]schema.EiffelEvent, error)
-	GetEventByID(context.Context, string) (schema.EiffelEvent, error)
-	Close(context.Context) error
+// toIfaceSlice converts an interface to a slice of interfaces
+func toIfaceSlice(v interface{}) []interface{} {
+	if v == nil {
+		return nil
+	}
+	return v.([]interface{})
 }
