@@ -154,25 +154,31 @@ func (m *Database) collections(ctx context.Context, filter bson.D) ([]string, er
 }
 
 // GetEvents gets all events information.
-func (m *Database) GetEvents(ctx context.Context, request requests.MultipleEventsRequest) ([]drivers.EiffelEvent, error) {
+func (m *Database) GetEvents(ctx context.Context, request requests.MultipleEventsRequest) ([]drivers.EiffelEvent, int64, error) {
 	filter, err := buildFilter(request.Conditions)
 	if err != nil {
 		m.logger.Errorf("Database: %v", err)
-		return nil, err
+		return nil, 0, err
 	}
 	collections, err := m.collections(ctx, filter)
 	if err != nil {
 		m.logger.Errorf("Database: %v", err)
-		return nil, err
+		return nil, 0, err
 	}
 
 	m.logger.Debugf("fetching events from %d collections", len(collections))
 	var allEvents []drivers.EiffelEvent
+	var numberOfDocuments int64
 	for _, collection := range collections {
 		var events []drivers.EiffelEvent
-		cursor, err := m.database.Collection(collection).Find(ctx, filter,
-			// Remove the _id field from the resulting document.
-			options.Find().SetProjection(bson.M{"_id": 0}))
+		findOptions := options.Find().
+			SetProjection(bson.M{"_id": 0}).
+			SetSkip(int64((request.PageNo - 1) * request.PageSize)).
+			SetLimit(int64(request.PageSize))
+
+		col := m.database.Collection(collection)
+		cursor, err := col.Find(ctx, filter, findOptions)
+
 		if err != nil {
 			continue
 		}
@@ -180,9 +186,15 @@ func (m *Database) GetEvents(ctx context.Context, request requests.MultipleEvent
 			m.logger.Info(err.Error())
 			continue
 		}
+		if int32(len(events)) < request.PageSize && request.PageNo == 1 {
+			numberOfDocuments += int64(len(events))
+		} else {
+			count, _ := col.CountDocuments(ctx, filter, &options.CountOptions{})
+			numberOfDocuments += count
+		}
 		allEvents = append(allEvents, events...)
 	}
-	return allEvents, nil
+	return allEvents, numberOfDocuments, nil
 }
 
 // SearchEvent searches for an event based on event ID.
