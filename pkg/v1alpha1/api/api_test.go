@@ -65,7 +65,6 @@ func TestRoutes(t *testing.T) {
 	}{
 		{name: "EventsRead", httpMethod: http.MethodGet, url: "/v1alpha1/events/" + eventID, statusCode: http.StatusOK},
 		{name: "EventsReadAll", httpMethod: http.MethodGet, url: "/v1alpha1/events?meta.type=EiffelArtifactCreatedEvent", statusCode: http.StatusOK},
-		{name: "SearchRead", httpMethod: http.MethodGet, url: "/v1alpha1/search/" + eventID, statusCode: http.StatusNotImplemented},
 		{name: "SearchUpstreamDownstream", httpMethod: http.MethodPost, url: "/v1alpha1/search/" + eventID, statusCode: http.StatusNotImplemented},
 	}
 
