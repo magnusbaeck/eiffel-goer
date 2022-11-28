@@ -167,32 +167,35 @@ func (m *Database) GetEvents(ctx context.Context, request requests.MultipleEvent
 	}
 
 	m.logger.Debugf("fetching events from %d collections", len(collections))
-	var allEvents []drivers.EiffelEvent
+	allEvents := make([]drivers.EiffelEvent, 0, request.PageSize)
 	var numberOfDocuments int64
 	for _, collection := range collections {
 		var events []drivers.EiffelEvent
-		findOptions := options.Find().
-			SetProjection(bson.M{"_id": 0}).
-			SetSkip(int64((request.PageNo - 1) * request.PageSize)).
-			SetLimit(int64(request.PageSize))
+		limit := request.PageSize - int32(len(allEvents))
 
 		col := m.database.Collection(collection)
-		cursor, err := col.Find(ctx, filter, findOptions)
+		if limit > 0 {
+			cursor, err := col.Find(ctx, filter, options.Find().
+				SetProjection(bson.M{"_id": 0}).
+				SetSkip(int64((request.PageNo-1)*request.PageSize)).
+				SetLimit(int64(limit)),
+			)
 
-		if err != nil {
-			continue
+			if err != nil {
+				continue
+			}
+			if err = cursor.All(ctx, &events); err != nil {
+				m.logger.Info(err.Error())
+				continue
+			}
+			allEvents = append(allEvents, events...)
 		}
-		if err = cursor.All(ctx, &events); err != nil {
-			m.logger.Info(err.Error())
-			continue
-		}
-		if int32(len(events)) < request.PageSize && request.PageNo == 1 {
+		if len(events) > 0 && int32(len(events)) < limit && request.PageNo == 1 {
 			numberOfDocuments += int64(len(events))
 		} else {
 			count, _ := col.CountDocuments(ctx, filter, &options.CountOptions{})
 			numberOfDocuments += count
 		}
-		allEvents = append(allEvents, events...)
 	}
 	return allEvents, numberOfDocuments, nil
 }

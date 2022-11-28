@@ -82,6 +82,9 @@ type multiResponse struct {
 
 // buildConditions takes a raw URL query, parses out all conditions and removes ignoreKeys.
 func buildConditions(rawQuery string, ignoreKeys map[string]struct{}) ([]query.Condition, error) {
+	if rawQuery == "" {
+		return nil, nil
+	}
 	res, err := query.Parse("nofile", []byte(rawQuery))
 	if err != nil {
 		return nil, err
@@ -116,6 +119,10 @@ func (h *EventHandler) ReadAll(w http.ResponseWriter, r *http.Request) {
 	if err := decoder.Decode(&request, r.URL.Query()); err != nil {
 		h.Logger.Error(err)
 		responses.RespondWithError(w, http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
+		return
+	}
+	if request.PageSize < 0 {
+		responses.RespondWithError(w, http.StatusBadRequest, "PageSize must be a positive integer")
 		return
 	}
 
