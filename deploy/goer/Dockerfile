@@ -6,6 +6,6 @@ WORKDIR /tmp/goer
 COPY . .
 RUN make build
 
-FROM alpine:3.13.5
+FROM alpine:3.17.3
 ENTRYPOINT ["/app/goer"]
 COPY --from=build /tmp/goer/bin/goer /app/goer
