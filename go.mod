@@ -3,7 +3,7 @@ module github.com/eiffel-community/eiffel-goer
 go 1.17
 
 require (
-	github.com/golang/mock v1.4.4
+	github.com/golang/mock v1.6.0
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/schema v1.2.0
 	github.com/sirupsen/logrus v1.4.2
@@ -33,7 +33,7 @@ require (
 	github.com/xdg-go/stringprep v1.0.2 // indirect
 	github.com/youmark/pkcs8 v0.0.0-20181117223130-1be2e3e5546d // indirect
 	golang.org/x/crypto v0.0.0-20210421170649-83a5a9bb288b // indirect
-	golang.org/x/sys v0.0.0-20210502180810-71e4cd670f79 // indirect
+	golang.org/x/sys v0.0.0-20210510120138-977fb7262007 // indirect
 	golang.org/x/text v0.3.5 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/yaml.v2 v2.3.0 // indirect
@@ -42,7 +42,6 @@ require (
 
 require (
 	github.com/eiffel-community/eiffelevents-sdk-go v0.0.0-20220128085857-41fb1ce1ccc2
-	golang.org/x/sync v0.0.0-20200625203802-6e8e738ad208 // indirect
-	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
+	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 )
